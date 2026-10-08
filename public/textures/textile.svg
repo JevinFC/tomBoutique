@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <!-- Généré par scripts/textures.mjs (npm run textures). Trame de tissu noir : sergé diagonal, fils et légères variations de teinte.
+       La tuile se répète sans couture (bruit « cousu » avec stitchTiles). -->
+  <defs>
+    <pattern id="serge" width="5" height="5" patternUnits="userSpaceOnUse">
+      <path d="M-1 1l2-2M0 5l5-5M4 6l2-2" stroke="#fff" stroke-width="1.1"/>
+    </pattern>
+    <filter id="irregulier" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.03" numOctaves="2" seed="4" stitchTiles="stitch" result="bruit"/>
+      <feColorMatrix in="bruit" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.2" result="masque"/>
+      <feComposite in="SourceGraphic" in2="masque" operator="in"/>
+    </filter>
+    <filter id="fils" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.025 0.65" numOctaves="2" seed="9" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  5 0 0 0 -3.05"/>
+    </filter>
+    <filter id="nuages" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="3" seed="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.5 0 0 0 -0.6"/>
+    </filter>
+  </defs>
+  <rect width="600" height="600" filter="url(#nuages)" opacity="0.045"/>
+  <rect width="600" height="600" fill="url(#serge)" filter="url(#irregulier)" opacity="0.05"/>
+  <rect width="600" height="600" filter="url(#fils)" opacity="0.07"/>
+</svg>

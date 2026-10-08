@@ -48,11 +48,14 @@ Sans `photo`, une silhouette du vêtement s'affiche sur le fond de sa couleur. S
 
 `src/data/site.ts` : slogan, textes des bandes qui défilent, date du prochain drop (compte à rebours), liens des réseaux.
 
+## Le fond
+
+Le fond façon tissu noir éraflé vient de deux images dans `public/textures/` : `textile.svg` (la trame) et `rayures.svg` (les éraflures et la poussière). Pour changer la densité des rayures, modifier `scripts/textures.mjs` puis lancer `npm run textures`.
+
 ## Ce qui bouge sur la page
 
 - Intro : compteur puis balayage aux couleurs des cheveux de Tom (une fois par session)
-- Slogan aux lettres qui tombent, glitch RGB sur « NOIR », « FLUO » en arc-en-ciel
-- Lampe torche qui révèle un mur de stickers derrière le titre (elle suit la souris)
+- Slogan aux lettres qui tombent, glitch RGB sur « NOIR », « FLUO » plaqué comme un sticker
 - Bandes adhésives qui traversent la page et accélèrent quand on scrolle
 - Patchs brodés qu'on peut attraper et déplacer à la souris (pirouette au clic)
 - Cartes produits qui se soulèvent, panier de démo avec confettis

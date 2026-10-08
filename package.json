@@ -11,6 +11,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "textures": "node scripts/textures.mjs",
     "astro": "astro"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 ---
-// Premier écran : slogan géant (lettres qui tombent, glitch, arc-en-ciel),
-// polaroid de la pièce phare, patchs à déplacer et lampe torche qui révèle un mur de stickers.
+// Premier écran : slogan géant (lettres qui tombent, glitch sur « NOIR », FLUO plaqué),
+// polaroid de la pièce phare et patchs à déplacer, sur le fond façon tissu éraflé du site.
 import type { CollectionEntry } from 'astro:content';
 import Garment from './Garment.astro';
 import Icon from './Icon.astro';
@@ -22,13 +22,6 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
 ---
 
 <section class="hero" data-hero aria-labelledby="hero-title">
-  <div class="hero__fx" aria-hidden="true">
-    <span class="hero__smoke" style="--c: var(--rose); --x: 14%; --y: 34%"></span>
-    <span class="hero__smoke" style="--c: var(--violet); --x: 82%; --y: 18%; --delay: -7s"></span>
-    <span class="hero__smoke" style="--c: var(--cyan); --x: 58%; --y: 95%; --delay: -13s"></span>
-    <div class="hero__wall" data-spotlight></div>
-  </div>
-
   <div class="hero__meta">
     <p class="kicker"><span class="live-dot"></span>Drop {site.drop.numero} en ligne</p>
     <p class="hero__meta-mid">{site.drop.saison} · {total} pièces · stock limité</p>
@@ -118,13 +111,9 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
 </section>
 
 <script>
-  import { onFrame, reducedMotion } from '../scripts/ticker';
-
-  const hero = document.querySelector<HTMLElement>('[data-hero]');
-  const wall = hero?.querySelector<HTMLElement>('[data-spotlight]');
-  const clock = hero?.querySelector<HTMLElement>('[data-clock]');
-
   // Horloge de Paris, à la seconde
+  const clock = document.querySelector<HTMLElement>('[data-hero] [data-clock]');
+
   if (clock) {
     const format = new Intl.DateTimeFormat('fr-FR', {
       hour: '2-digit',
@@ -135,38 +124,6 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
     const tick = () => (clock.textContent = format.format(new Date()));
     tick();
     window.setInterval(tick, 1000);
-  }
-
-  // Lampe torche : révèle les stickers cachés dans le mur derrière le titre.
-  // Elle suit la souris, et se promène toute seule quand personne ne la guide (mobile compris).
-  if (hero && wall) {
-    let targetX = 0.7;
-    let targetY = 0.4;
-    let x = targetX;
-    let y = targetY;
-    let lastMove = -Infinity;
-    let visible = true;
-
-    hero.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      const rect = hero.getBoundingClientRect();
-      targetX = (e.clientX - rect.left) / rect.width;
-      targetY = (e.clientY - rect.top) / rect.height;
-      lastMove = performance.now();
-    });
-    new IntersectionObserver(([entry]) => (visible = entry.isIntersecting)).observe(hero);
-
-    onFrame(({ time }) => {
-      if (!visible || reducedMotion.matches) return;
-      if (performance.now() - lastMove > 2500) {
-        targetX = 0.5 + Math.sin(time * 0.42) * 0.38;
-        targetY = 0.45 + Math.sin(time * 0.67 + 1.3) * 0.3;
-      }
-      x += (targetX - x) * 0.07;
-      y += (targetY - y) * 0.07;
-      wall.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
-      wall.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
-    });
   }
 </script>
 
@@ -184,58 +141,6 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
     gap: clamp(20px, 2.6vw, 36px) clamp(24px, 4vw, 64px);
     min-height: calc(100svh - var(--hdr-h) - 34px);
     padding: clamp(18px, 2.4vw, 30px) var(--gutter) clamp(120px, 12vw, 180px);
-  }
-
-  /* --- Fumée colorée + mur de stickers révélé par la lampe torche --- */
-
-  .hero__fx {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .hero__smoke {
-    position: absolute;
-    top: var(--y);
-    left: var(--x);
-    width: max(440px, 56vw);
-    aspect-ratio: 1;
-    translate: -50% -50%;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 28%, transparent), transparent);
-    animation: hero-smoke 20s ease-in-out infinite alternate;
-    animation-delay: var(--delay, 0s);
-  }
-
-  @keyframes hero-smoke {
-    from {
-      transform: translate(-6%, -5%) scale(1);
-    }
-    to {
-      transform: translate(8%, 6%) scale(1.3);
-    }
-  }
-
-  .hero__wall {
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg stroke='%23ff2e88'%3E%3Ccircle cx='35' cy='35' r='16'/%3E%3Cpath d='M27 29l5 5m0-5l-5 5M38 29l5 5m0-5l-5 5M27 41q8 7 16 0'/%3E%3C/g%3E%3Cpath stroke='%23c5ff1f' d='M105 14l4.5 10.5 11.5 1-8.7 7.5 2.7 11.2-10-5.9-10 5.9 2.7-11.2-8.7-7.5 11.5-1z'/%3E%3Cpath stroke='%231fe4ff' d='M104 84l-14 20h10l-4 18 16-22h-10l6-16z'/%3E%3Cpath stroke='%23ffe23d' d='M35 124c-10-7-15-12-15-18 0-4.5 3.5-8 7.5-8 3 0 5.5 2 7.5 4.5 2-2.5 4.5-4.5 7.5-4.5 4 0 7.5 3.5 7.5 8 0 6-5 11-15 18z'/%3E%3Cpath stroke='%23a066ff' d='M70 62v12M64 68h12'/%3E%3Cpath stroke='%23ff6b1c' d='M124 64l6 6m0-6l-6 6M10 72l6 6m0-6l-6 6'/%3E%3C/svg%3E")
-      0 0 / 140px 140px;
-    opacity: 0.75;
-    -webkit-mask-image: radial-gradient(
-      circle at var(--mx, 72%) var(--my, 40%),
-      #000,
-      rgb(0 0 0 / 0.45) var(--spot-in, 110px),
-      transparent var(--spot-out, 260px)
-    );
-    mask-image: radial-gradient(
-      circle at var(--mx, 72%) var(--my, 40%),
-      #000,
-      rgb(0 0 0 / 0.45) var(--spot-in, 110px),
-      transparent var(--spot-out, 260px)
-    );
   }
 
   /* --- Méta en haut --- */
@@ -304,18 +209,7 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
   }
 
   .hero__word--fluo {
-    padding-right: 0.02em;
-    color: transparent;
-    background: var(--arc) 0 0 / 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: hero-arc 4s linear infinite;
-  }
-
-  @keyframes hero-arc {
-    to {
-      background-position: -200% 0;
-    }
+    color: var(--acide);
   }
 
   .hero__tag {
@@ -622,12 +516,6 @@ const letters = (word: string, start: number) => [...word].map((char, i) => ({ c
 
     .hero__meta-mid {
       display: none;
-    }
-
-    .hero__wall {
-      --spot-in: 60px;
-      --spot-out: 150px;
-      background-size: 100px 100px;
     }
 
     .hero__title {

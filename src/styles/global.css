@@ -70,7 +70,10 @@ html.menu-open {
 
 body {
   min-height: 100svh;
-  background: var(--noir);
+  /* Fond façon tissu noir éraflé : trame + rayures (public/textures/) */
+  background-color: var(--noir);
+  background-image: url('/textures/rayures.svg'), url('/textures/textile.svg');
+  background-size: 1100px 1100px, 600px 600px;
   color: var(--blanc);
   font-family: var(--f-mono);
   font-size: 15px;
