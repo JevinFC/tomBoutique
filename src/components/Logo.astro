@@ -1,0 +1,91 @@
+---
+// Le smiley de Tom : visage noir, yeux en croix, cheveux arc-en-ciel qui défilent.
+interface Props {
+  class?: string;
+  /** Mèches animées (désactivé pour les petits imprimés sur les vêtements) */
+  animated?: boolean;
+  /** Texte alternatif ; sans titre, le logo est décoratif */
+  title?: string;
+  /** Position et taille quand le logo est imbriqué dans un autre SVG */
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+const { class: className, animated = true, title, x, y, width, height } = Astro.props;
+const uid = `logo-${Math.random().toString(36).slice(2, 8)}`;
+
+const HAIR =
+  'M20 62L13 40 24 45 20 21 33 31 33 7 45 25 54 3 60 24 74 9 72 30 88 23 80 42 93 46 81 58 81 62 74 51 68 43 62 51 55 41 48 51 41 43 34 52 28 46 24 60z';
+const COLORS = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
+// 18 bandes (3 tours de palette) : assez pour que le défilement boucle sans trou
+const STRIPES = Array.from({ length: 18 }, (_, i) => COLORS[i % COLORS.length]);
+---
+
+<svg
+  class:list={['logo', className, { 'logo--animated': animated }]}
+  viewBox="0 0 100 100"
+  x={x}
+  y={y}
+  width={width}
+  height={height}
+  role={title ? 'img' : undefined}
+  aria-label={title}
+  aria-hidden={title ? undefined : 'true'}
+>
+  <defs>
+    <clipPath id={`${uid}-hair`}>
+      <path d={HAIR}></path>
+    </clipPath>
+  </defs>
+  <circle class="logo__head" cx="50" cy="63" r="28"></circle>
+  <g clip-path={`url(#${uid}-hair)`}>
+    <g class="logo__stripes">
+      {
+        STRIPES.map((color, i) => (
+          <rect x={-124 + i * 14} y="-10" width="14.6" height="100" transform="skewX(-22)" style={`fill: var(--${color})`} />
+        ))
+      }
+    </g>
+  </g>
+  <path class="logo__hair" d={HAIR}></path>
+  <path class="logo__face" d="M36 61l7 7m0-7l-7 7M57 61l7 7m0-7l-7 7M38 76q12 10 24 0"></path>
+</svg>
+
+<style>
+  .logo {
+    overflow: visible;
+  }
+
+  .logo__head {
+    fill: var(--noir);
+    stroke: var(--blanc);
+    stroke-width: 3;
+  }
+
+  .logo__hair {
+    fill: none;
+    stroke: var(--noir);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+
+  .logo__face {
+    fill: none;
+    stroke: var(--blanc);
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .logo--animated .logo__stripes {
+    animation: logo-hair 3.5s linear infinite;
+  }
+
+  /* 6 bandes de 14 = un tour complet de palette */
+  @keyframes logo-hair {
+    to {
+      transform: translateX(84px);
+    }
+  }
+</style>

@@ -1,0 +1,373 @@
+---
+// En-tête collant : logo, navigation, panier (démo) et menu plein écran sur mobile.
+import Logo from './Logo.astro';
+
+const LIENS = [
+  { label: 'Shop', href: '#drop', couleur: 'rose' },
+  { label: 'Prochain drop', href: '#prochain-drop', couleur: 'acide' },
+  { label: 'Lookbook', href: '#lookbook', couleur: 'cyan' },
+  { label: 'Qui est Tom ?', href: '#tom', couleur: 'jaune' },
+];
+---
+
+<header class="hdr" data-header>
+  <a class="hdr__brand" href="#top" aria-label="Tom Boutique, retour en haut">
+    <Logo class="hdr__logo" />
+    <span class="hdr__name" aria-hidden="true">Tom<span class="gothic">Boutique</span></span>
+  </a>
+
+  <nav class="hdr__nav" aria-label="Navigation principale">
+    <ul>
+      {
+        LIENS.map((lien) => (
+          <li>
+            <a href={lien.href} style={`--c: var(--${lien.couleur})`}>
+              {lien.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="hdr__actions">
+    <button class="hdr__cart" type="button" data-cart>
+      <span class="hdr__cart-label">Panier</span>
+      <span class="hdr__count" data-cart-count>0</span>
+    </button>
+    <button class="hdr__burger" type="button" aria-expanded="false" aria-controls="menu" data-burger>
+      <span class="sr-only">Menu</span>
+      <span class="hdr__burger-lines" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+
+<div class="menu" id="menu" data-menu hidden>
+  <nav aria-label="Navigation mobile">
+    <ul>
+      {
+        LIENS.map((lien, i) => (
+          <li style={`--c: var(--${lien.couleur}); --i: ${i}`}>
+            <a href={lien.href}>{lien.label}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <p class="menu__foot">Noir dehors. Fluo dedans.</p>
+</div>
+
+<script>
+  import { onFrame } from '../scripts/ticker';
+  import { getCartCount, toast } from '../scripts/fun';
+
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+  let menuOpen = false;
+
+  const setMenu = (open: boolean) => {
+    if (!burger || !menu) return;
+    menuOpen = open;
+    burger.setAttribute('aria-expanded', String(open));
+    document.documentElement.classList.toggle('menu-open', open);
+    if (open) {
+      menu.hidden = false;
+      requestAnimationFrame(() => menu.classList.add('is-open'));
+      menu.querySelector('a')?.focus({ preventScroll: true });
+    } else {
+      menu.classList.remove('is-open');
+      menu.hidden = true;
+    }
+  };
+
+  burger?.addEventListener('click', () => setMenu(!menuOpen));
+  menu?.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('a')) setMenu(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menuOpen) {
+      setMenu(false);
+      burger?.focus();
+    }
+  });
+
+  // L'en-tête se cache quand on descend et revient dès qu'on remonte
+  let lastY = window.scrollY;
+  onFrame(({ scrollY }) => {
+    if (!header || Math.abs(scrollY - lastY) < 8) return;
+    header.classList.toggle('is-hidden', scrollY > lastY && scrollY > 400 && !menuOpen);
+    lastY = scrollY;
+  });
+
+  document.querySelector('[data-cart]')?.addEventListener('click', () => {
+    const count = getCartCount();
+    toast(
+      count === 0
+        ? 'Panier vide. Pour l’instant. (démo)'
+        : `${count} article${count > 1 ? 's' : ''} dans le panier (démo)`,
+    );
+  });
+</script>
+
+<style>
+  .hdr {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    height: var(--hdr-h);
+    padding: 0 var(--gutter);
+    background: color-mix(in srgb, var(--noir) 86%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 2px solid var(--blanc);
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .hdr.is-hidden {
+    transform: translateY(-105%);
+  }
+
+  .hdr__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hdr__brand :global(.hdr__logo) {
+    width: 44px;
+    height: 44px;
+    transition: transform 0.5s var(--ease-back);
+  }
+
+  .hdr__brand:hover :global(.hdr__logo) {
+    transform: rotate(-14deg) scale(1.12);
+  }
+
+  .hdr__name {
+    font-family: var(--f-display);
+    font-size: 25px;
+    font-weight: 900;
+    font-stretch: 68%;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .hdr__name .gothic {
+    margin-left: 0.18em;
+    font-size: 0.92em;
+    color: var(--rose);
+  }
+
+  .hdr__nav ul {
+    display: flex;
+    gap: 4px;
+  }
+
+  .hdr__nav a {
+    position: relative;
+    display: block;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    isolation: isolate;
+    transition: color 0.2s;
+  }
+
+  .hdr__nav a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--c);
+    transform: scaleY(0) skewX(-12deg);
+    transform-origin: bottom;
+    transition: transform 0.35s var(--ease-back);
+  }
+
+  .hdr__nav a:hover,
+  .hdr__nav a:focus-visible {
+    color: var(--noir);
+  }
+
+  .hdr__nav a:hover::before,
+  .hdr__nav a:focus-visible::before {
+    transform: scaleY(1) skewX(-12deg);
+  }
+
+  .hdr__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hdr__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 2px solid var(--blanc);
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+
+  .hdr__cart:hover {
+    color: var(--noir);
+    background: var(--blanc);
+  }
+
+  .hdr__count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 7px;
+    font-size: 12px;
+    color: var(--noir);
+    background: var(--acide);
+    border-radius: 999px;
+  }
+
+  .hdr__count:global(.bump) {
+    animation: hdr-bump 0.55s var(--ease-back);
+  }
+
+  @keyframes hdr-bump {
+    40% {
+      transform: scale(1.7) rotate(-14deg);
+      background: var(--rose);
+    }
+  }
+
+  .hdr__burger {
+    display: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--blanc);
+  }
+
+  .hdr__burger-lines,
+  .hdr__burger-lines::before,
+  .hdr__burger-lines::after {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: currentColor;
+    transition:
+      transform 0.35s var(--ease-back),
+      background-color 0.2s;
+  }
+
+  .hdr__burger-lines {
+    position: relative;
+  }
+
+  .hdr__burger-lines::before,
+  .hdr__burger-lines::after {
+    content: '';
+    position: absolute;
+    left: 0;
+  }
+
+  .hdr__burger-lines::before {
+    top: -6px;
+  }
+
+  .hdr__burger-lines::after {
+    top: 6px;
+  }
+
+  .hdr__burger[aria-expanded='true'] .hdr__burger-lines {
+    background: transparent;
+  }
+
+  .hdr__burger[aria-expanded='true'] .hdr__burger-lines::before {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .hdr__burger[aria-expanded='true'] .hdr__burger-lines::after {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  /* Menu mobile plein écran */
+  .menu {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: calc(var(--hdr-h) + 32px) var(--gutter) 28px;
+    background: var(--noir);
+  }
+
+  .menu[hidden] {
+    display: none;
+  }
+
+  .menu li {
+    overflow: hidden;
+    border-bottom: 3px solid var(--c);
+  }
+
+  .menu a {
+    display: block;
+    padding: 10px 0 6px;
+    font-family: var(--f-display);
+    font-size: clamp(44px, 13vw, 84px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.9;
+    text-transform: uppercase;
+    transform: translateY(105%);
+    transition:
+      transform 0.6s var(--ease-out),
+      color 0.2s;
+    transition-delay: calc(var(--i) * 70ms + 60ms), 0s;
+  }
+
+  .menu.is-open a {
+    transform: none;
+  }
+
+  .menu a:hover,
+  .menu a:focus-visible {
+    color: var(--c);
+  }
+
+  .menu__foot {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  @media (max-width: 900px) {
+    .hdr__nav {
+      display: none;
+    }
+
+    .hdr__burger {
+      display: grid;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hdr__name .gothic {
+      display: none;
+    }
+  }
+</style>

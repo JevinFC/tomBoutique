@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <clipPath id="cheveux">
+      <path d="M20 62L13 40 24 45 20 21 33 31 33 7 45 25 54 3 60 24 74 9 72 30 88 23 80 42 93 46 81 58 81 62 74 51 68 43 62 51 55 41 48 51 41 43 34 52 28 46 24 60z" />
+    </clipPath>
+  </defs>
+  <circle cx="50" cy="63" r="28" fill="#09090a" stroke="#f4f0e8" stroke-width="4" />
+  <g clip-path="url(#cheveux)">
+    <g transform="skewX(-22)">
+      <rect x="-12" y="-10" width="15" height="100" fill="#ff2e88" />
+      <rect x="2" y="-10" width="15" height="100" fill="#ff6b1c" />
+      <rect x="16" y="-10" width="15" height="100" fill="#ffe23d" />
+      <rect x="30" y="-10" width="15" height="100" fill="#c5ff1f" />
+      <rect x="44" y="-10" width="15" height="100" fill="#1fe4ff" />
+      <rect x="58" y="-10" width="15" height="100" fill="#a066ff" />
+      <rect x="72" y="-10" width="15" height="100" fill="#ff2e88" />
+      <rect x="86" y="-10" width="15" height="100" fill="#ff6b1c" />
+      <rect x="100" y="-10" width="15" height="100" fill="#ffe23d" />
+      <rect x="114" y="-10" width="15" height="100" fill="#c5ff1f" />
+    </g>
+  </g>
+  <path d="M20 62L13 40 24 45 20 21 33 31 33 7 45 25 54 3 60 24 74 9 72 30 88 23 80 42 93 46 81 58 81 62 74 51 68 43 62 51 55 41 48 51 41 43 34 52 28 46 24 60z" fill="none" stroke="#09090a" stroke-width="2.5" stroke-linejoin="round" />
+  <path d="M36 61l7 7m0-7l-7 7M57 61l7 7m0-7l-7 7M38 76q12 10 24 0" fill="none" stroke="#f4f0e8" stroke-width="5" stroke-linecap="round" />
+</svg>

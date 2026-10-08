@@ -1,0 +1,290 @@
+---
+// Patchs brodés décoratifs : ils flottent, glissent au scroll (parallaxe),
+// se déplacent à la souris et font une pirouette au clic.
+import type { Couleur } from '../data/catalogue';
+
+interface Props {
+  kind: 'star' | 'smiley' | 'bolt' | 'heart' | 'skull' | 'bpm' | 'tom';
+  color?: Couleur;
+  /** Largeur en px (réduite automatiquement sur mobile) */
+  size?: number;
+  /** Position dans la section parente, ex. '8%' ou '120px' */
+  x: string;
+  y: string;
+  /** Position sur mobile, si elle doit être différente */
+  mobileX?: string;
+  mobileY?: string;
+  rotate?: number;
+  /** Parallaxe : 0 = suit la page, 0.2 = glisse doucement, négatif = sens inverse */
+  speed?: number;
+  /** Délai d'apparition en ms */
+  delay?: number;
+  /** Masqué sur mobile pour ne pas encombrer */
+  desktopOnly?: boolean;
+}
+
+const {
+  kind,
+  color = 'rose',
+  size = 96,
+  x,
+  y,
+  mobileX = x,
+  mobileY = y,
+  rotate = 0,
+  speed = 0,
+  delay = 0,
+  desktopOnly = false,
+} = Astro.props;
+const uid = `patch-${Math.random().toString(36).slice(2, 8)}`;
+
+const STAR = 'M50 4L61.8 33.8 93.7 35.8 69 56.2 77 87.2 50 70 23 87.2 31 56.2 6.3 35.8 38.2 33.8z';
+const BOLT = 'M56 2L16 58h28L34 98l50-60H56L70 2z';
+const HEART = 'M50 88C20 66 6 48 6 32 6 18 17 8 30 8c10 0 16 6 20 14 4-8 10-14 20-14 13 0 24 10 24 24 0 16-14 34-44 56z';
+const SKULL = 'M50 8C26 8 12 25 12 46c0 14 7 22 16 26v12c0 5 4 8 9 8h26c5 0 9-3 9-8V72c9-4 16-12 16-26C88 25 74 8 50 8z';
+const MINI_HEART =
+  'M12 21C5 16 2 12.5 2 8.5 2 5.5 4.3 3 7.2 3c2.1 0 3.8 1.3 4.8 3 1-1.7 2.7-3 4.8-3C19.7 3 22 5.5 22 8.5c0 4-3 7.5-10 12.5z';
+---
+
+<div
+  class:list={['patch', { 'patch--desktop': desktopOnly }]}
+  style={`--x: ${x}; --y: ${y}; --xm: ${mobileX}; --ym: ${mobileY}; --s: ${size}px; --r: ${rotate}deg; --c: var(--${color}); --delay: ${delay}ms`}
+  data-pop
+  aria-hidden="true"
+>
+  <div class="patch__para" data-speed={speed || undefined}>
+    <div class="patch__drag" data-patch data-cursor="Bouge-moi">
+      <div class="patch__body">
+        <svg viewBox="0 0 100 100">
+          {
+            kind === 'star' && (
+              <Fragment>
+                <path class="p-fill" d={STAR} />
+                <path class="p-stitch" d={STAR} transform="translate(50 52) scale(.72) translate(-50 -52)" />
+                <path class="p-ink-line p-thin" d="M42 45v6M58 45v6M43 59q7 5 14 0" />
+              </Fragment>
+            )
+          }
+          {
+            kind === 'smiley' && (
+              <Fragment>
+                <circle class="p-fill" cx="50" cy="50" r="44" />
+                <circle class="p-stitch" cx="50" cy="50" r="36" />
+                <path class="p-ink-line" d="M32 34l10 10m0-10L32 44M58 34l10 10m0-10L58 44M30 60q20 22 40 0" />
+              </Fragment>
+            )
+          }
+          {
+            kind === 'bolt' && (
+              <Fragment>
+                <path class="p-fill" d={BOLT} />
+                <path class="p-stitch" d={BOLT} transform="translate(50 50) scale(.7) translate(-50 -50)" />
+              </Fragment>
+            )
+          }
+          {
+            kind === 'heart' && (
+              <Fragment>
+                <path class="p-fill" d={HEART} />
+                <path class="p-stitch" d={HEART} transform="translate(50 46) scale(.78) translate(-50 -46)" />
+                <path class="p-ink-line p-thin" d="M50 22l-6 14 9 9-7 11 5 12" />
+                <path class="p-ink-line p-thinner" d="M40 30l8 4M48 40l9-2M43 51l9 3M45 63l9-1" />
+              </Fragment>
+            )
+          }
+          {
+            kind === 'skull' && (
+              <Fragment>
+                <path class="p-fill" d={SKULL} />
+                <path class="p-stitch" d={SKULL} transform="translate(50 50) scale(.82) translate(-50 -50)" />
+                <path class="p-ink" d={MINI_HEART} transform="translate(26.5 38) scale(.8)" />
+                <path class="p-ink" d={MINI_HEART} transform="translate(54.5 38) scale(.8)" />
+                <path class="p-ink" d="M50 60l-5 8h10z" />
+                <path class="p-ink-line p-thin" d="M40 78v10M50 78v12M60 78v10" />
+              </Fragment>
+            )
+          }
+          {
+            kind === 'bpm' && (
+              <Fragment>
+                <defs>
+                  <path id={`${uid}-ring`} d="M50 50m-31 0a31 31 0 1 1 62 0a31 31 0 1 1-62 0" />
+                </defs>
+                <circle class="p-fill" cx="50" cy="50" r="46" />
+                <circle class="p-stitch" cx="50" cy="50" r="41" />
+                <g class="p-spin">
+                  <text class="p-ring-text" textLength="190">
+                    <textPath href={`#${uid}-ring`}>TECHNO • RAP • COULEURS • </textPath>
+                  </text>
+                </g>
+                <circle class="p-ink" cx="50" cy="50" r="20" />
+                <text class="p-num" x="50" y="53">140</text>
+                <text class="p-unit" x="50" y="63">BPM</text>
+              </Fragment>
+            )
+          }
+          {
+            kind === 'tom' && (
+              <Fragment>
+                <ellipse class="p-fill" cx="50" cy="50" rx="47" ry="31" />
+                <ellipse class="p-stitch" cx="50" cy="50" rx="40" ry="24.5" />
+                <text class="p-gothic" x="50" y="61">Tom</text>
+              </Fragment>
+            )
+          }
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .patch {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    z-index: 20;
+    width: var(--s);
+    pointer-events: none;
+  }
+
+  .patch__drag {
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .patch__drag.is-dragging {
+    cursor: grabbing;
+  }
+
+  /* Apparition : le patch est « collé » d'un coup sec */
+  :global(html.js) .patch__drag {
+    opacity: 0;
+    transform: scale(0.3) rotate(-50deg);
+    transition:
+      opacity 0.3s var(--delay),
+      transform 0.8s var(--ease-back) var(--delay);
+  }
+
+  :global(html.is-ready) .patch.is-in .patch__drag,
+  :global(html.is-ready:not(.motion-ok)) .patch__drag {
+    opacity: 1;
+    transform: none;
+  }
+
+  .patch__body {
+    rotate: var(--r);
+    animation: patch-float 7s ease-in-out infinite alternate;
+    animation-delay: calc(var(--delay) * -4);
+    transition: scale 0.35s var(--ease-back);
+  }
+
+  .patch__drag.is-dragging .patch__body {
+    scale: 1.2;
+  }
+
+  @media (hover: hover) {
+    .patch__drag:hover .patch__body {
+      scale: 1.12;
+    }
+  }
+
+  @keyframes patch-float {
+    from {
+      transform: translateY(-5px) rotate(-4deg);
+    }
+    to {
+      transform: translateY(6px) rotate(5deg);
+    }
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(4px 6px 0 rgb(0 0 0 / 0.55));
+  }
+
+  .p-fill {
+    fill: var(--c);
+    stroke: var(--noir);
+    stroke-width: 5;
+    stroke-linejoin: round;
+  }
+
+  /* Points de couture */
+  .p-stitch {
+    fill: none;
+    stroke: var(--noir);
+    stroke-opacity: 0.6;
+    stroke-width: 1.6;
+    stroke-dasharray: 3.5 3;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .p-ink {
+    fill: var(--noir);
+  }
+
+  .p-ink-line {
+    fill: none;
+    stroke: var(--noir);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .p-thin {
+    stroke-width: 3.5;
+  }
+
+  .p-thinner {
+    stroke-width: 2.2;
+  }
+
+  .p-spin {
+    transform-origin: 50px 50px;
+    animation: spin 14s linear infinite;
+  }
+
+  .p-ring-text {
+    font: 700 9.4px var(--f-mono);
+    fill: var(--noir);
+  }
+
+  .p-num {
+    font: 900 16px var(--f-display);
+    font-stretch: 70%;
+    fill: var(--blanc);
+    text-anchor: middle;
+  }
+
+  .p-unit {
+    font: 700 7px var(--f-mono);
+    letter-spacing: 1px;
+    fill: var(--c);
+    text-anchor: middle;
+  }
+
+  .p-gothic {
+    font: 700 34px var(--f-gothic);
+    fill: var(--noir);
+    text-anchor: middle;
+  }
+
+  @media (max-width: 760px) {
+    .patch {
+      top: var(--ym);
+      left: var(--xm);
+      width: calc(var(--s) * 0.7);
+    }
+
+    .patch--desktop {
+      display: none;
+    }
+  }
+</style>

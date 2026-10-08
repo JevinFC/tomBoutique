@@ -1,0 +1,152 @@
+---
+// Grille du drop en cours : la première pièce est en grand, les autres suivent.
+import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import Patch from './Patch.astro';
+import ProductCard from './ProductCard.astro';
+import { site } from '../data/site';
+
+interface Props {
+  produits: CollectionEntry<'produits'>[];
+}
+
+const grille = Astro.props.produits.slice(0, 6);
+const prochainDrop = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
+  .format(new Date(site.prochainDrop.date))
+  .replace('/', '.');
+---
+
+<section class="drop" id="drop" aria-labelledby="drop-title">
+  <header class="shead">
+    <span class="shead__idx">(01)</span>
+    <h2 class="shead__title" id="drop-title">Drop <span class="drop__num gothic">{site.drop.numero}</span></h2>
+    <p class="shead__aside">
+      « {site.drop.nom} » — {grille.length} pièces sorties du sous-sol. Coton épais, prints fluo. Quand c'est parti, c'est
+      parti.
+    </p>
+  </header>
+
+  <div class="drop__grid">
+    {
+      grille.map((produit, i) => (
+        <div class="drop__cell" data-reveal style={`--d: ${(i % 3) * 90}`}>
+          <ProductCard produit={produit} featured={i === 0} />
+        </div>
+      ))
+    }
+    <a class="drop__next" href="#prochain-drop" data-reveal style="--d: 180">
+      <span class="drop__next-kicker">Prochain drop</span>
+      <span class="drop__next-date">{prochainDrop}</span>
+      <span class="drop__next-name gothic">{site.prochainDrop.nom}</span>
+      <Icon name="arrow" />
+    </a>
+  </div>
+
+  <Patch kind="heart" color="violet" size={92} x="88%" y="40px" rotate={14} speed={0.1} />
+  {/* Collé sur le coin bas-droit de la photo de la pièce phare (grand écran) */}
+  <Patch kind="tom" color="acide" size={128} x="50%" y="35.7%" rotate={-10} desktopOnly />
+</section>
+
+<script>
+  import { addToCart } from '../scripts/fun';
+
+  document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const rect = button.getBoundingClientRect();
+      addToCart(button.dataset.add ?? 'Article', { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    });
+  });
+</script>
+
+<style>
+  .drop {
+    position: relative;
+    padding: clamp(90px, 10vw, 150px) var(--gutter) clamp(80px, 9vw, 140px);
+  }
+
+  .drop__num {
+    margin-left: 0.04em;
+    font-size: 0.7em;
+    color: var(--rose);
+  }
+
+  .drop__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(32px, 3.4vw, 52px) clamp(16px, 2vw, 30px);
+  }
+
+  /* La pièce phare prend toute la largeur, les autres suivent en grille */
+  .drop__cell:first-child {
+    grid-column: 1 / -1;
+    margin-bottom: clamp(8px, 2vw, 32px);
+  }
+
+  /* Case « prochain drop » : complète la dernière rangée */
+  .drop__next {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 260px;
+    padding: 22px;
+    border: 2px dashed var(--blanc);
+    transition:
+      color 0.3s,
+      background-color 0.3s,
+      border-color 0.3s;
+  }
+
+  .drop__next-kicker {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .drop__next-date {
+    font-family: var(--f-display);
+    font-size: clamp(64px, 8vw, 130px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.8;
+  }
+
+  .drop__next-name {
+    font-size: clamp(28px, 3vw, 46px);
+    line-height: 1;
+    color: var(--acide);
+  }
+
+  .drop__next :global(.icon) {
+    align-self: flex-end;
+    font-size: 40px;
+    color: var(--acide);
+    transition: transform 0.4s var(--ease-back);
+  }
+
+  @media (hover: hover) {
+    .drop__next:hover {
+      color: var(--noir);
+      background: var(--acide);
+      border-color: var(--acide);
+    }
+
+    .drop__next:hover .drop__next-kicker,
+    .drop__next:hover .drop__next-name,
+    .drop__next:hover :global(.icon) {
+      color: var(--noir);
+    }
+
+    .drop__next:hover :global(.icon) {
+      transform: rotate(-45deg);
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .drop__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

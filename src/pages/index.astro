@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Categories from '../components/Categories.astro';
+import Drop from '../components/Drop.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Loader from '../components/Loader.astro';
+import Lookbook from '../components/Lookbook.astro';
+import Manifesto from '../components/Manifesto.astro';
+import Newsletter from '../components/Newsletter.astro';
+import NextDrop from '../components/NextDrop.astro';
+import Tape from '../components/Tape.astro';
+import { site } from '../data/site';
+
+// Les vêtements viennent de src/content/produits/*.md (un fichier par pièce)
+const produits = (await getCollection('produits')).sort((a, b) => a.data.ordre - b.data.ordre);
+const aLaUne = produits.filter((produit) => produit.data.alaune);
+const { bandes } = site;
+---
+
+<Base>
+  <Loader />
+
+  <div id="top">
+    <p class="sr-only">{bandes.annonce.join(' — ')}</p>
+    <Tape items={bandes.annonce} color="acide" size="thin" speed={40} icon="smiley" />
+  </div>
+
+  <Header />
+
+  <main id="contenu">
+    <Hero vedette={aLaUne[0]} total={aLaUne.length} />
+
+    <div class="tapes-x" aria-hidden="true">
+      <Tape items={bandes.heroA} color="rose" angle={-4} direction={-1} speed={80} icon="star" />
+      <Tape items={bandes.heroB} color="acide" angle={3} direction={1} speed={65} icon="smiley" />
+    </div>
+
+    <Drop produits={aLaUne} />
+
+    <Tape items={bandes.drop} color="cyan" angle={-2} direction={1} speed={60} icon="bolt" />
+
+    <Manifesto />
+    <Categories produits={produits} />
+
+    <div class="tapes-x" aria-hidden="true">
+      <Tape items={bandes.flyerA} color="jaune" angle={2.5} direction={-1} speed={75} icon="heart" />
+      <Tape items={bandes.flyerB} color="violet" angle={-3} direction={1} speed={60} icon="star" />
+    </div>
+
+    <NextDrop />
+    <Lookbook />
+
+    <Tape items={bandes.liste} color="orange" angle={1.5} direction={-1} speed={70} icon="smiley" />
+
+    <Newsletter />
+  </main>
+
+  <Footer />
+</Base>

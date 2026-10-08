@@ -1,0 +1,162 @@
+---
+// Silhouettes de vêtements en SVG : placeholders en attendant les vraies photos
+// (ajoute un champ `photo` dans la fiche produit pour les remplacer).
+import Logo from './Logo.astro';
+import type { Categorie } from '../data/catalogue';
+
+interface Props {
+  type: Categorie;
+  class?: string;
+}
+
+const { type, class: className } = Astro.props;
+
+// Position du petit imprimé (le smiley de Tom) sur chaque vêtement : [x, y, taille]
+const PRINT: Record<Categorie, [number, number, number]> = {
+  hoodie: [85, 95, 30],
+  tshirt: [83, 64, 34],
+  longsleeve: [84, 64, 32],
+  pantalon: [56, 44, 22],
+  casquette: [116, 68, 34],
+  bonnet: [86, 123, 28],
+  sac: [68, 98, 64],
+};
+const [px, py, ps] = PRINT[type];
+const ribs = Array.from({ length: 14 }, (_, i) => `M${47 + i * 8} 120v36`).join('');
+---
+
+<svg class:list={['garment', className]} viewBox="0 0 200 200" aria-hidden="true">
+  <ellipse class="g-shadow" cx="100" cy="193" rx="70" ry="6"></ellipse>
+
+  {
+    type === 'hoodie' && (
+      <Fragment>
+        <path class="g-body" d="M66 40L40 48 22 78 8 162l22 6 18-70v84h104V98l18 70 22-6-14-84-18-30-26-8z" />
+        <path class="g-body" d="M66 44C62 22 78 8 100 8s38 14 34 36c-10 10-58 10-68 0z" />
+        <path class="g-hole" d="M80 42c0-16 10-24 20-24s20 8 20 24c-8 6-32 6-40 0z" />
+        <path class="g-line" d="M68 134h64l8 32H60zM48 174h104M10 154l20 6M190 154l-20 6" />
+        <path class="g-cord" d="M92 50l-2 34M108 50l2 34" />
+        <circle class="g-tip" cx="90" cy="87" r="3" />
+        <circle class="g-tip" cx="110" cy="87" r="3" />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'tshirt' && (
+      <Fragment>
+        <path class="g-body" d="M74 26q26 20 52 0l36 12 28 42-26 16-12-16v100H48V80L36 96 10 80l28-42z" />
+        <path class="g-line" d="M74 26q26 24 52 0M16 74l24 15M184 74l-24 15M48 171h104" />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'longsleeve' && (
+      <Fragment>
+        <path class="g-body" d="M74 26q26 20 52 0l36 12 16 34 14 90-22 6-18-78v90H48V90l-18 78-22-6 14-90 16-34z" />
+        <path class="g-line" d="M74 26q26 24 52 0M10 152l20 6M190 152l-20 6M48 171h104" />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'pantalon' && (
+      <Fragment>
+        <path class="g-body" d="M54 12h92l4 18 14 158h-52l-12-104-12 104H36l14-158z" />
+        <path
+          class="g-line"
+          d="M51 26h98M64 12v14M100 12v14M136 12v14M100 26v44M47 100h24l2 42H49zM47 109h24M129 100h24l-2 42h-24zM129 109h24M38 178h50M112 178h50"
+        />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'casquette' && (
+      <Fragment>
+        <path class="g-body" d="M28 128c-2-54 34-82 76-82s68 30 68 78c-32 8-112 10-144 4z" />
+        <path class="g-body" d="M148 118c22-4 44 1 50 11 2 7-5 11-16 11-20 0-38-4-54-10z" />
+        <path class="g-line" d="M104 50c6 30 11 54 14 78M104 50c-14 28-24 52-30 80M30 116c12-6 24-4 30 6" />
+        <circle class="g-knob" cx="104" cy="47" r="5" />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'bonnet' && (
+      <Fragment>
+        <path class="g-body" d="M44 120c-4-60 26-92 56-92s60 32 56 92z" />
+        <path class="g-body" d="M38 114h124c3 16 3 32 0 48H38c-3-16-3-32 0-48z" />
+        <path class="g-line" d={`M38 114h124${ribs}`} />
+        <rect class="g-label" x="84" y="122" width="32" height="30" rx="2" />
+      </Fragment>
+    )
+  }
+
+  {
+    type === 'sac' && (
+      <Fragment>
+        <path class="g-strap" d="M66 66c0-52 68-52 68 0M78 66c0-38 44-38 44 0" />
+        <path class="g-body" d="M40 64h120l8 124H32z" />
+        <path class="g-line" d="M40 74h120" />
+      </Fragment>
+    )
+  }
+
+  <Logo animated={false} x={px} y={py} width={ps} height={ps} />
+</svg>
+
+<style>
+  .garment {
+    --garment: #0d0d0f;
+    --garment-line: #3a3a41;
+    overflow: visible;
+  }
+
+  .g-shadow {
+    fill: rgb(0 0 0 / 0.28);
+  }
+
+  .g-body {
+    fill: var(--garment);
+  }
+
+  .g-hole {
+    fill: #020202;
+  }
+
+  .g-line {
+    fill: none;
+    stroke: var(--garment-line);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .g-cord {
+    fill: none;
+    stroke: var(--blanc);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  .g-tip {
+    fill: var(--blanc);
+  }
+
+  .g-knob {
+    fill: var(--garment-line);
+  }
+
+  .g-label {
+    fill: #1d1d22;
+  }
+
+  .g-strap {
+    fill: none;
+    stroke: var(--garment);
+    stroke-width: 7;
+    stroke-linecap: round;
+  }
+</style>

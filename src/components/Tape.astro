@@ -1,0 +1,119 @@
+---
+// Bande colorée (façon gaffer) qui traverse la page avec un texte défilant.
+// Le défilement accélère quand on scrolle (voir src/scripts/motion.ts).
+import Icon from './Icon.astro';
+import type { Couleur } from '../data/catalogue';
+
+interface Props {
+  items: string[];
+  color?: Couleur;
+  /** Inclinaison en degrés */
+  angle?: number;
+  /** 1 = défile vers la droite, -1 = vers la gauche */
+  direction?: 1 | -1;
+  /** Vitesse de base en pixels par seconde */
+  speed?: number;
+  icon?: 'star' | 'smiley' | 'bolt' | 'heart';
+  /** « thin » = bandeau d'annonce tout en haut */
+  size?: 'normal' | 'thin';
+}
+
+const { items, color = 'rose', angle = 0, direction = -1, speed = 70, icon = 'star', size = 'normal' } = Astro.props;
+
+// Le texte est répété pour que chaque moitié de la piste dépasse la largeur de l'écran
+const repeat = Math.max(2, Math.ceil(12 / items.length));
+const sequence = Array.from({ length: repeat }, () => items).flat();
+---
+
+<div
+  class:list={['tape', `tape--${size}`]}
+  style={`--c: var(--${color}); --a: ${angle}deg`}
+  data-marquee
+  data-marquee-direction={direction}
+  data-marquee-speed={speed}
+  aria-hidden="true"
+>
+  <div class="tape__track" data-marquee-track>
+    {
+      [0, 1].map(() => (
+        <div class="tape__group">
+          {sequence.map((text) => (
+            <Fragment>
+              <span>{text}</span>
+              <Icon name={icon} />
+            </Fragment>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .tape {
+    position: relative;
+    width: 130vw;
+    margin-left: -15vw;
+    overflow: hidden;
+    color: var(--noir);
+    background: var(--c);
+    border-block: 3px solid var(--noir);
+    box-shadow: 0 16px 36px -14px rgb(0 0 0 / 0.85);
+    rotate: var(--a);
+  }
+
+  /* Texture de ruban adhésif : fibres + léger reflet */
+  .tape::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(90deg, rgb(0 0 0 / 0.06) 0 1px, transparent 1px 5px),
+      linear-gradient(rgb(255 255 255 / 0.22), transparent 35%, transparent 70%, rgb(0 0 0 / 0.14));
+  }
+
+  .tape__track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .tape__group {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.55em;
+    padding: 0.32em 0.55em 0.26em 0;
+    font-family: var(--f-display);
+    font-size: clamp(22px, 2.8vw, 44px);
+    font-weight: 900;
+    font-stretch: 72%;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .tape__group :global(.icon) {
+    font-size: 0.62em;
+  }
+
+  .tape--thin {
+    width: auto;
+    margin-left: 0;
+    border-block-width: 0 2px;
+    box-shadow: none;
+    rotate: none;
+  }
+
+  .tape--thin .tape__group {
+    gap: 1.4em;
+    padding: 9px 1.4em 8px 0;
+    font: 700 12px/1 var(--f-mono);
+    letter-spacing: 0.12em;
+  }
+
+  .tape--thin .tape__group :global(.icon) {
+    font-size: 15px;
+  }
+</style>

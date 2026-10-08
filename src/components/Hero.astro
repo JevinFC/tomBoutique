@@ -1,0 +1,658 @@
+---
+// Premier écran : slogan géant (lettres qui tombent, glitch, arc-en-ciel),
+// polaroid de la pièce phare, patchs à déplacer et lampe torche qui révèle un mur de stickers.
+import type { CollectionEntry } from 'astro:content';
+import Garment from './Garment.astro';
+import Icon from './Icon.astro';
+import Patch from './Patch.astro';
+import { formatPrix } from '../data/catalogue';
+import { site } from '../data/site';
+
+interface Props {
+  /** Pièce phare, affichée sur le polaroid */
+  vedette: CollectionEntry<'produits'>;
+  /** Nombre de pièces du drop en cours */
+  total: number;
+}
+
+const { vedette, total } = Astro.props;
+
+// Découpe un mot en lettres pour l'animation d'entrée (l'index sert au décalage)
+const letters = (word: string, start: number) => [...word].map((char, i) => ({ char, i: start + i }));
+---
+
+<section class="hero" data-hero aria-labelledby="hero-title">
+  <div class="hero__fx" aria-hidden="true">
+    <span class="hero__smoke" style="--c: var(--rose); --x: 14%; --y: 34%"></span>
+    <span class="hero__smoke" style="--c: var(--violet); --x: 82%; --y: 18%; --delay: -7s"></span>
+    <span class="hero__smoke" style="--c: var(--cyan); --x: 58%; --y: 95%; --delay: -13s"></span>
+    <div class="hero__wall" data-spotlight></div>
+  </div>
+
+  <div class="hero__meta">
+    <p class="kicker"><span class="live-dot"></span>Drop {site.drop.numero} en ligne</p>
+    <p class="hero__meta-mid">{site.drop.saison} · {total} pièces · stock limité</p>
+    <p>Paris <time data-clock>--:--:--</time></p>
+  </div>
+
+  <h1 class="hero__title" id="hero-title">
+    <span class="sr-only">{site.slogan} {site.nom}</span>
+    <span class="hero__lines" aria-hidden="true">
+      <span class="hero__line">
+        <span class="hero__word glitch" data-text="NOIR">
+          {letters('NOIR', 0).map(({ char, i }) => <span class="ch" style={`--i: ${i}`}>{char}</span>)}
+        </span>
+        <span class="hero__word hero__word--outline">
+          {letters('DEHORS.', 4).map(({ char, i }) => <span class="ch" style={`--i: ${i}`}>{char}</span>)}
+        </span>
+      </span>
+      <span class="hero__line">
+        <span class="hero__word hero__word--fluo">FLUO</span>
+        <span class="hero__word">
+          {letters('DEDANS.', 13).map(({ char, i }) => <span class="ch" style={`--i: ${i}`}>{char}</span>)}
+        </span>
+      </span>
+      <span class="hero__tag gothic">Tom Boutique</span>
+    </span>
+  </h1>
+
+  <div class="hero__bottom">
+    <p class="hero__lede">{site.description}</p>
+    <div class="hero__ctas">
+      <a class="btn" href="#drop" style="--c: var(--acide)">Voir le drop <Icon name="arrow" /></a>
+      <a class="btn btn--ghost" href="#lookbook" style="--c: var(--rose)">Lookbook</a>
+    </div>
+  </div>
+
+  <a class="hero__card" href="#drop" data-tilt data-cursor="Voir" style={`--c: var(--${vedette.data.couleur})`}>
+    <span class="hero__card-inner">
+      <span class="hero__card-tape" aria-hidden="true"></span>
+      <span class="hero__card-img"><Garment type={vedette.data.categorie} /></span>
+      <span class="hero__card-cap">
+        <span>{vedette.data.nom}</span>
+        <span>{formatPrix(vedette.data.prix)}</span>
+      </span>
+      <span class="hero__card-badge">Pièce phare</span>
+    </span>
+  </a>
+
+  {/* L'étoile se colle pile sur le point de « DEHORS. » (grand écran) */}
+  <Patch kind="star" color="rose" size={84} x="90.2%" y="18%" rotate={12} delay={1250} desktopOnly />
+  <Patch kind="skull" color="acide" size={78} x="3%" y="50%" rotate={-8} speed={0.1} delay={1450} desktopOnly />
+  <Patch
+    kind="smiley"
+    color="jaune"
+    size={104}
+    x="45%"
+    y="66%"
+    mobileX="70%"
+    mobileY="21.5%"
+    rotate={-14}
+    speed={0.12}
+    delay={1150}
+  />
+  <Patch
+    kind="bpm"
+    color="orange"
+    size={118}
+    x="58%"
+    y="76%"
+    mobileX="66%"
+    mobileY="5%"
+    rotate={8}
+    speed={0.16}
+    delay={1350}
+  />
+  <Patch
+    kind="bolt"
+    color="cyan"
+    size={66}
+    x="71%"
+    y="52%"
+    mobileX="7%"
+    mobileY="36%"
+    rotate={16}
+    speed={-0.06}
+    delay={1550}
+  />
+</section>
+
+<script>
+  import { onFrame, reducedMotion } from '../scripts/ticker';
+
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  const wall = hero?.querySelector<HTMLElement>('[data-spotlight]');
+  const clock = hero?.querySelector<HTMLElement>('[data-clock]');
+
+  // Horloge de Paris, à la seconde
+  if (clock) {
+    const format = new Intl.DateTimeFormat('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Europe/Paris',
+    });
+    const tick = () => (clock.textContent = format.format(new Date()));
+    tick();
+    window.setInterval(tick, 1000);
+  }
+
+  // Lampe torche : révèle les stickers cachés dans le mur derrière le titre.
+  // Elle suit la souris, et se promène toute seule quand personne ne la guide (mobile compris).
+  if (hero && wall) {
+    let targetX = 0.7;
+    let targetY = 0.4;
+    let x = targetX;
+    let y = targetY;
+    let lastMove = -Infinity;
+    let visible = true;
+
+    hero.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const rect = hero.getBoundingClientRect();
+      targetX = (e.clientX - rect.left) / rect.width;
+      targetY = (e.clientY - rect.top) / rect.height;
+      lastMove = performance.now();
+    });
+    new IntersectionObserver(([entry]) => (visible = entry.isIntersecting)).observe(hero);
+
+    onFrame(({ time }) => {
+      if (!visible || reducedMotion.matches) return;
+      if (performance.now() - lastMove > 2500) {
+        targetX = 0.5 + Math.sin(time * 0.42) * 0.38;
+        targetY = 0.45 + Math.sin(time * 0.67 + 1.3) * 0.3;
+      }
+      x += (targetX - x) * 0.07;
+      y += (targetY - y) * 0.07;
+      wall.style.setProperty('--mx', `${(x * 100).toFixed(2)}%`);
+      wall.style.setProperty('--my', `${(y * 100).toFixed(2)}%`);
+    });
+  }
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(210px, 20vw, 300px);
+    grid-template-areas:
+      'meta meta'
+      'title title'
+      'bottom card';
+    align-content: start;
+    gap: clamp(20px, 2.6vw, 36px) clamp(24px, 4vw, 64px);
+    min-height: calc(100svh - var(--hdr-h) - 34px);
+    padding: clamp(18px, 2.4vw, 30px) var(--gutter) clamp(120px, 12vw, 180px);
+  }
+
+  /* --- Fumée colorée + mur de stickers révélé par la lampe torche --- */
+
+  .hero__fx {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .hero__smoke {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    width: max(440px, 56vw);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 28%, transparent), transparent);
+    animation: hero-smoke 20s ease-in-out infinite alternate;
+    animation-delay: var(--delay, 0s);
+  }
+
+  @keyframes hero-smoke {
+    from {
+      transform: translate(-6%, -5%) scale(1);
+    }
+    to {
+      transform: translate(8%, 6%) scale(1.3);
+    }
+  }
+
+  .hero__wall {
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg stroke='%23ff2e88'%3E%3Ccircle cx='35' cy='35' r='16'/%3E%3Cpath d='M27 29l5 5m0-5l-5 5M38 29l5 5m0-5l-5 5M27 41q8 7 16 0'/%3E%3C/g%3E%3Cpath stroke='%23c5ff1f' d='M105 14l4.5 10.5 11.5 1-8.7 7.5 2.7 11.2-10-5.9-10 5.9 2.7-11.2-8.7-7.5 11.5-1z'/%3E%3Cpath stroke='%231fe4ff' d='M104 84l-14 20h10l-4 18 16-22h-10l6-16z'/%3E%3Cpath stroke='%23ffe23d' d='M35 124c-10-7-15-12-15-18 0-4.5 3.5-8 7.5-8 3 0 5.5 2 7.5 4.5 2-2.5 4.5-4.5 7.5-4.5 4 0 7.5 3.5 7.5 8 0 6-5 11-15 18z'/%3E%3Cpath stroke='%23a066ff' d='M70 62v12M64 68h12'/%3E%3Cpath stroke='%23ff6b1c' d='M124 64l6 6m0-6l-6 6M10 72l6 6m0-6l-6 6'/%3E%3C/svg%3E")
+      0 0 / 140px 140px;
+    opacity: 0.75;
+    -webkit-mask-image: radial-gradient(
+      circle at var(--mx, 72%) var(--my, 40%),
+      #000,
+      rgb(0 0 0 / 0.45) var(--spot-in, 110px),
+      transparent var(--spot-out, 260px)
+    );
+    mask-image: radial-gradient(
+      circle at var(--mx, 72%) var(--my, 40%),
+      #000,
+      rgb(0 0 0 / 0.45) var(--spot-in, 110px),
+      transparent var(--spot-out, 260px)
+    );
+  }
+
+  /* --- Méta en haut --- */
+
+  .hero__meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .hero__meta .kicker {
+    color: var(--blanc);
+  }
+
+  .hero__meta time {
+    color: var(--acide);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Le slogan géant --- */
+
+  .hero__title {
+    grid-area: title;
+    position: relative;
+    z-index: 2;
+    font-family: var(--f-display);
+    font-size: clamp(76px, 14.4vw, 290px);
+    font-weight: 900;
+    font-stretch: 86%;
+    line-height: 0.8;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .hero__lines {
+    position: relative;
+    display: block;
+  }
+
+  .hero__line {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.14em;
+  }
+
+  .hero__word {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .ch {
+    display: inline-block;
+  }
+
+  .hero__word--outline {
+    color: transparent;
+    -webkit-text-stroke: 0.022em var(--blanc);
+  }
+
+  .hero__word--fluo {
+    padding-right: 0.02em;
+    color: transparent;
+    background: var(--arc) 0 0 / 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: hero-arc 4s linear infinite;
+  }
+
+  @keyframes hero-arc {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .hero__tag {
+    position: absolute;
+    top: 36%;
+    left: 30%;
+    font-size: 0.36em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--rose);
+    rotate: -8deg;
+    -webkit-text-stroke: 0.05em var(--noir);
+    paint-order: stroke fill;
+    text-shadow: 0.05em 0.06em 0 var(--noir);
+  }
+
+  /* Glitch RGB sur « NOIR » : une petite salve toutes les 6 secondes */
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .glitch::before {
+    color: var(--cyan);
+    animation: glitch-a 6s steps(1, end) 3s infinite;
+  }
+
+  .glitch::after {
+    color: var(--rose);
+    animation: glitch-b 6s steps(1, end) 3s infinite;
+  }
+
+  @keyframes glitch-a {
+    0%,
+    90%,
+    100% {
+      opacity: 0;
+      transform: none;
+      clip-path: inset(0);
+    }
+    91% {
+      opacity: 0.9;
+      transform: translate(-0.04em, 0.01em);
+      clip-path: inset(12% 0 58% 0);
+    }
+    93% {
+      opacity: 0.9;
+      transform: translate(0.03em, -0.01em);
+      clip-path: inset(62% 0 6% 0);
+    }
+    95% {
+      opacity: 0.9;
+      transform: translate(-0.02em, 0);
+      clip-path: inset(38% 0 36% 0);
+    }
+    96% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes glitch-b {
+    0%,
+    90%,
+    100% {
+      opacity: 0;
+      transform: none;
+      clip-path: inset(0);
+    }
+    91.5% {
+      opacity: 0.9;
+      transform: translate(0.04em, -0.01em);
+      clip-path: inset(48% 0 24% 0);
+    }
+    94% {
+      opacity: 0.9;
+      transform: translate(-0.03em, 0.02em);
+      clip-path: inset(8% 0 70% 0);
+    }
+    96% {
+      opacity: 0;
+    }
+  }
+
+  /* --- Bas du hero --- */
+
+  .hero__bottom {
+    grid-area: bottom;
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 24px;
+    align-self: end;
+    max-width: 560px;
+  }
+
+  .hero__lede {
+    font-size: clamp(14px, 1.15vw, 17px);
+    line-height: 1.65;
+    color: color-mix(in srgb, var(--blanc) 82%, transparent);
+  }
+
+  .hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* --- Polaroid de la pièce phare --- */
+
+  .hero__card {
+    grid-area: card;
+    position: relative;
+    z-index: 3;
+    align-self: end;
+    justify-self: end;
+    width: 100%;
+    margin-top: clamp(-40px, -2.4vw, -16px);
+  }
+
+  .hero__card-inner {
+    position: relative;
+    display: block;
+    padding: 12px 12px 14px;
+    color: var(--noir);
+    background: var(--blanc);
+    box-shadow:
+      0 30px 60px -20px rgb(0 0 0 / 0.9),
+      8px 8px 0 var(--c);
+    rotate: 4deg;
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition:
+      transform 0.5s var(--ease-out),
+      rotate 0.5s var(--ease-back);
+    animation: hero-float 5s ease-in-out infinite alternate;
+  }
+
+  @keyframes hero-float {
+    from {
+      translate: 0 -6px;
+    }
+    to {
+      translate: 0 8px;
+    }
+  }
+
+  .hero__card-img {
+    position: relative;
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background:
+      radial-gradient(rgb(0 0 0 / 0.18) 1.1px, transparent 1.6px) 0 0 / 7px 7px,
+      var(--c);
+  }
+
+  .hero__card-img :global(.garment) {
+    width: 86%;
+    height: 86%;
+    margin: 7%;
+    transition: transform 0.6s var(--ease-back);
+  }
+
+  .hero__card-cap {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .hero__card-tape {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    z-index: 2;
+    width: 120px;
+    height: 32px;
+    translate: -50% 0;
+    rotate: -6deg;
+    background: color-mix(in srgb, var(--cyan) 80%, transparent);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  }
+
+  .hero__card-badge {
+    position: absolute;
+    top: 22%;
+    right: -18px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--acide);
+    background: var(--noir);
+    border: 2px solid var(--acide);
+    rotate: 10deg;
+  }
+
+  @media (hover: hover) {
+    .hero__card:hover .hero__card-inner {
+      rotate: 0deg;
+    }
+
+    .hero__card:hover .hero__card-img :global(.garment) {
+      transform: rotate(-6deg) scale(1.08);
+    }
+  }
+
+  /* --- Entrée : les lettres tombent, FLUO est plaqué, la signature est tamponnée --- */
+
+  :global(html.js) .hero .ch {
+    opacity: 0;
+    transform: translateY(-0.55em) rotate(-12deg);
+    transition:
+      opacity 0.25s,
+      transform 0.9s var(--ease-back);
+    transition-delay: calc(var(--i) * 45ms + 120ms);
+  }
+
+  :global(html.is-ready) .hero .ch {
+    opacity: 1;
+    transform: none;
+  }
+
+  :global(html.js) .hero__word--fluo {
+    opacity: 0;
+    transform: scale(2.2) rotate(-14deg);
+    transition:
+      opacity 0.2s 0.62s,
+      transform 0.8s var(--ease-back) 0.62s;
+  }
+
+  :global(html.is-ready) .hero__word--fluo {
+    opacity: 1;
+    transform: rotate(-2deg);
+  }
+
+  :global(html.js) .hero__tag {
+    opacity: 0;
+    scale: 1.9;
+    transition:
+      opacity 0.2s 1.05s,
+      scale 0.55s var(--ease-back) 1.05s;
+  }
+
+  :global(html.is-ready) .hero__tag {
+    opacity: 1;
+    scale: 1;
+  }
+
+  :global(html.js) .hero__meta,
+  :global(html.js) .hero__bottom {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s var(--ease-out),
+      transform 0.9s var(--ease-out);
+  }
+
+  :global(html.js) .hero__bottom {
+    transition-delay: 0.95s;
+  }
+
+  :global(html.is-ready) .hero__meta,
+  :global(html.is-ready) .hero__bottom {
+    opacity: 1;
+    transform: none;
+  }
+
+  :global(html.js) .hero__card {
+    opacity: 0;
+    transform: translateY(40%) rotate(18deg);
+    transition:
+      opacity 0.4s 1.1s,
+      transform 1s var(--ease-back) 1.1s;
+  }
+
+  :global(html.is-ready) .hero__card {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* --- Mobile : un mot par ligne, polaroid au centre --- */
+
+  @media (max-width: 760px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'meta'
+        'title'
+        'card'
+        'bottom';
+      min-height: 0;
+      padding-bottom: 130px;
+    }
+
+    .hero__meta-mid {
+      display: none;
+    }
+
+    .hero__wall {
+      --spot-in: 60px;
+      --spot-out: 150px;
+      background-size: 100px 100px;
+    }
+
+    .hero__title {
+      font-size: clamp(64px, 25vw, 150px);
+      font-stretch: 66%;
+    }
+
+    .hero__line {
+      display: block;
+    }
+
+    .hero__word {
+      display: flex;
+    }
+
+    .hero__tag {
+      top: 47%;
+      left: 12%;
+      font-size: 0.32em;
+    }
+
+    .hero__card {
+      justify-self: center;
+      width: min(250px, 72vw);
+      margin-top: -12vw;
+    }
+  }
+</style>

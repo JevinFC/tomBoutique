@@ -1,0 +1,152 @@
+---
+// « Qui est Tom ? » : le texte s'allume mot à mot pendant le scroll,
+// et certains mots reçoivent un patch de couleur.
+import Logo from './Logo.astro';
+import Patch from './Patch.astro';
+
+const TEXTE =
+  "Tom s'habille en noir pour les nuits techno, les sous-sols qui tremblent et le rap qui grince. Mais regarde ses cheveux : ici, le noir sert juste à faire péter la couleur. Des fringues sombres pour des gens lumineux.";
+
+// Mots surlignés → couleur du patch
+const SURLIGNES: Record<string, string> = {
+  'techno,': 'var(--cyan)',
+  'sous-sols': 'var(--violet)',
+  rap: 'var(--rose)',
+  cheveux: 'var(--arc)',
+  'couleur.': 'var(--acide)',
+  'lumineux.': 'var(--jaune)',
+};
+
+// La ponctuation haute (: ; ! ?) reste collée au mot précédent par une espace insécable
+const mots = TEXTE.split(' ').map((mot, i) => ({
+  mot,
+  avant: i === 0 ? '' : /^[:;!?]$/.test(mot) ? ' ' : ' ',
+  couleur: SURLIGNES[mot],
+}));
+---
+
+<section class="tom" id="tom" aria-labelledby="tom-title">
+  <header class="shead">
+    <span class="shead__idx">(02)</span>
+    <h2 class="shead__title" id="tom-title">Qui est <span class="gothic tom__name">Tom</span>&nbsp;?</h2>
+    <p class="shead__aside">Techno le jour, rap qui grince la nuit, et des cheveux de toutes les couleurs entre les deux.</p>
+  </header>
+
+  <p class="tom__text" data-manifesto>
+    {
+      mots.map(({ mot, avant, couleur }) => (
+        <Fragment>{avant}<span class:list={['tom__w', { 'tom__w--hl': couleur }]} style={couleur && `--c: ${couleur}`}>{mot}</span></Fragment>
+      ))
+    }
+  </p>
+
+  <div class="tom__sign" data-reveal>
+    <Logo class="tom__logo" />
+    <p>— Tom, probablement en train de rire<br />(et d'écouter un truc qui fait peur)</p>
+  </div>
+
+  <Patch kind="star" color="jaune" size={86} x="90%" y="24%" rotate={-12} speed={0.2} />
+  <Patch kind="bolt" color="rose" size={64} x="2%" y="74%" rotate={18} speed={-0.1} desktopOnly />
+</section>
+
+<script>
+  import { onFrame, reducedMotion } from '../scripts/ticker';
+
+  const text = document.querySelector<HTMLElement>('[data-manifesto]');
+  const words = text ? [...text.querySelectorAll<HTMLElement>('.tom__w')] : [];
+
+  if (text && words.length) {
+    if (reducedMotion.matches) {
+      words.forEach((word) => word.classList.add('is-lit'));
+    } else {
+      let lit = -1;
+      onFrame(() => {
+        const rect = text.getBoundingClientRect();
+        const vh = window.innerHeight;
+        if (rect.bottom < -vh || rect.top > vh * 2) return;
+        // 0 quand le texte entre en bas de l'écran, 1 quand sa fin remonte aux 3/4 de l'écran
+        const progress = Math.min(1, Math.max(0, (vh * 0.9 - rect.top) / (rect.height + vh * 0.15)));
+        const count = Math.round(progress * words.length);
+        if (count === lit) return;
+        lit = count;
+        words.forEach((word, i) => word.classList.toggle('is-lit', i < count));
+      });
+    }
+  }
+</script>
+
+<style>
+  .tom {
+    position: relative;
+    padding: clamp(90px, 10vw, 150px) var(--gutter);
+  }
+
+  .tom__name {
+    font-size: 0.86em;
+    color: var(--rose);
+  }
+
+  .tom__text {
+    max-width: 21em;
+    font-family: var(--f-display);
+    font-size: clamp(32px, 5.6vw, 92px);
+    font-weight: 800;
+    font-stretch: 82%;
+    line-height: 1.04;
+    letter-spacing: -0.005em;
+    text-transform: uppercase;
+  }
+
+  .tom__w {
+    position: relative;
+    color: #34343a;
+    transition: color 0.4s;
+  }
+
+  .tom__w.is-lit {
+    color: var(--blanc);
+  }
+
+  .tom__w--hl {
+    z-index: 0;
+  }
+
+  .tom__w--hl::before {
+    content: '';
+    position: absolute;
+    inset: 0.06em -0.12em 0.02em;
+    z-index: -1;
+    background: var(--c);
+    transform: scaleX(0) rotate(-1.5deg);
+    transform-origin: left center;
+    transition: transform 0.5s var(--ease-back);
+  }
+
+  .tom__w--hl.is-lit {
+    color: var(--noir);
+  }
+
+  .tom__w--hl.is-lit::before {
+    transform: scaleX(1) rotate(-1.5deg);
+  }
+
+  .tom__sign {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: clamp(36px, 5vw, 64px);
+    font-size: 14px;
+    color: var(--gris);
+  }
+
+  .tom__sign :global(.tom__logo) {
+    width: 76px;
+    flex: none;
+    rotate: -10deg;
+    transition: rotate 0.6s var(--ease-back);
+  }
+
+  .tom__sign:hover :global(.tom__logo) {
+    rotate: 350deg;
+  }
+</style>

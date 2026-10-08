@@ -1,0 +1,210 @@
+---
+// Pied de page : liens, et le nom en géant dont chaque lettre saute au survol.
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { RAYONS } from '../data/catalogue';
+import { site } from '../data/site';
+
+const LETTRES = [...site.nom.toUpperCase()];
+const COULEURS = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
+const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
+---
+
+<footer class="ftr">
+  <div class="ftr__cols">
+    <div class="ftr__brand">
+      <Logo class="ftr__logo" />
+      <p>Fait dans un sous-sol, à 140 BPM, avec beaucoup trop de couleurs.</p>
+    </div>
+    <nav aria-label="Shop">
+      <h2>Shop</h2>
+      <ul>
+        {
+          RAYONS.map((rayon) => (
+            <li>
+              <a href="#drop">{rayon.nom}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <nav aria-label="Aide">
+      <h2>Aide</h2>
+      <ul>
+        {
+          AIDE.map((lien) => (
+            <li>
+              <a href="#">{lien}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <nav aria-label="Réseaux">
+      <h2>Réseaux</h2>
+      <ul>
+        {
+          site.reseaux.map((reseau) => (
+            <li>
+              <a href={reseau.url}>{reseau.nom}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+
+  <p class="ftr__giant" data-pop>
+    <span class="sr-only">{site.nom}</span>
+    <span class="ftr__giant-row" aria-hidden="true">
+      {
+        LETTRES.map((lettre, i) =>
+          lettre === ' ' ? (
+            <span class="ftr__space" />
+          ) : (
+            <span class="ftr__letter" style={`--c: var(--${COULEURS[i % COULEURS.length]}); --i: ${i}`}>
+              {lettre}
+            </span>
+          ),
+        )
+      }
+    </span>
+  </p>
+
+  <div class="ftr__bottom">
+    <p>© {new Date().getFullYear()} {site.nom}</p>
+    <p>Prototype v0.1 — les vêtements sont des placeholders</p>
+    <a href="#top">Retour en haut <Icon name="arrow" class="ftr__up" /></a>
+  </div>
+</footer>
+
+<style>
+  .ftr {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(60px, 8vw, 110px) var(--gutter) 24px;
+    background: var(--noir);
+    border-top: 2px solid var(--blanc);
+  }
+
+  .ftr__cols {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .ftr__brand :global(.ftr__logo) {
+    width: 72px;
+    margin-bottom: 16px;
+  }
+
+  .ftr__brand p {
+    max-width: 30ch;
+    font-size: 13px;
+    color: var(--gris);
+  }
+
+  .ftr h2 {
+    margin-bottom: 14px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .ftr li + li {
+    margin-top: 6px;
+  }
+
+  .ftr nav a {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(var(--acide), var(--acide)) 0 100% / 0 3px no-repeat;
+    transition: background-size 0.35s var(--ease-out);
+  }
+
+  .ftr nav a:hover {
+    background-size: 100% 3px;
+  }
+
+  .ftr__giant {
+    margin: clamp(48px, 8vw, 110px) 0 10px;
+  }
+
+  .ftr__giant-row {
+    display: flex;
+    justify-content: center;
+    font-family: var(--f-display);
+    font-size: 23.5vw;
+    font-weight: 900;
+    font-stretch: 50%;
+    line-height: 0.78;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .ftr__space {
+    width: 0.12em;
+  }
+
+  .ftr__letter {
+    display: inline-block;
+    transition:
+      translate 0.9s var(--ease-back) calc(var(--i) * 45ms),
+      opacity 0.5s calc(var(--i) * 45ms),
+      transform 0.35s var(--ease-back),
+      color 0.2s;
+  }
+
+  .ftr__letter:hover {
+    color: var(--c);
+    transform: translateY(-10%) rotate(-6deg);
+  }
+
+  :global(html.js) .ftr__letter {
+    opacity: 0;
+    translate: 0 60%;
+  }
+
+  :global(html.is-ready) .ftr__giant:global(.is-in) .ftr__letter,
+  :global(html.is-ready:not(.motion-ok)) .ftr__letter {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .ftr__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px 24px;
+    padding-top: 18px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gris);
+    border-top: 2px solid var(--ligne);
+  }
+
+  .ftr__bottom a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--blanc);
+  }
+
+  .ftr__bottom :global(.ftr__up) {
+    rotate: -90deg;
+  }
+
+  @media (max-width: 800px) {
+    .ftr__cols {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .ftr__brand {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

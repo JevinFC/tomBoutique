@@ -1,0 +1,170 @@
+---
+// Curseur maison (souris uniquement) : un point qui suit exactement la souris
+// et un anneau coloré qui le rattrape, grossit sur les liens et affiche un mot.
+---
+
+<div class="cursor" aria-hidden="true">
+  <div class="cursor__ring" data-cursor-ring><span class="cursor__label" data-cursor-label></span></div>
+  <div class="cursor__dot" data-cursor-dot></div>
+</div>
+
+<script>
+  import { finePointer, onFrame, reducedMotion } from '../scripts/ticker';
+
+  const root = document.querySelector<HTMLElement>('.cursor');
+  const ring = root?.querySelector<HTMLElement>('[data-cursor-ring]');
+  const dot = root?.querySelector<HTMLElement>('[data-cursor-dot]');
+  const label = root?.querySelector<HTMLElement>('[data-cursor-label]');
+
+  if (root && ring && dot && label && finePointer.matches && !reducedMotion.matches) {
+    const COLORS = ['--rose', '--acide', '--cyan', '--jaune', '--orange', '--violet'];
+    const TARGETS = 'a, button, label, input, [data-cursor]';
+    let mx = -100;
+    let my = -100;
+    let rx = -100;
+    let ry = -100;
+    let color = 0;
+    let visible = false;
+    let current: Element | null = null;
+
+    document.documentElement.classList.add('has-cursor');
+
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse') return;
+        mx = e.clientX;
+        my = e.clientY;
+        dot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+        if (!visible) {
+          visible = true;
+          rx = mx;
+          ry = my;
+          root.classList.add('is-on');
+        }
+      },
+      { passive: true },
+    );
+
+    document.documentElement.addEventListener('pointerleave', () => {
+      visible = false;
+      root.classList.remove('is-on');
+    });
+
+    document.addEventListener('pointerover', (e) => {
+      const target = (e.target as Element).closest<HTMLElement>(TARGETS);
+      if (!target || target === current) return;
+      current = target;
+      color = (color + 1) % COLORS.length;
+      root.style.setProperty('--cc', `var(${COLORS[color]})`);
+      const text = target.dataset.cursor ?? '';
+      label.textContent = text;
+      root.classList.add('is-hover');
+      root.classList.toggle('has-label', text !== '');
+    });
+
+    document.addEventListener('pointerout', (e) => {
+      const from = (e.target as Element).closest(TARGETS);
+      const to = (e.relatedTarget as Element | null)?.closest(TARGETS) ?? null;
+      if (!from || from === to) return;
+      current = null;
+      root.classList.remove('is-hover', 'has-label');
+    });
+
+    window.addEventListener('pointerdown', () => root.classList.add('is-down'));
+    window.addEventListener('pointerup', () => root.classList.remove('is-down'));
+
+    onFrame(() => {
+      rx += (mx - rx) * 0.22;
+      ry += (my - ry) * 0.22;
+      ring.style.transform = `translate3d(${rx.toFixed(1)}px, ${ry.toFixed(1)}px, 0)`;
+    });
+  }
+</script>
+
+<style>
+  .cursor {
+    --cc: var(--rose);
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .cursor.is-on {
+    opacity: 1;
+  }
+
+  .cursor__dot,
+  .cursor__ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    will-change: transform;
+  }
+
+  .cursor__dot {
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--blanc);
+    box-shadow: 0 0 0 2px var(--noir);
+    transition: scale 0.25s var(--ease-back);
+  }
+
+  .cursor__ring {
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+  }
+
+  .cursor__ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--cc);
+    border-radius: 50%;
+    transition:
+      transform 0.35s var(--ease-back),
+      background-color 0.25s;
+  }
+
+  .is-hover .cursor__ring::before {
+    transform: scale(1.6);
+    background: color-mix(in srgb, var(--cc) 22%, transparent);
+  }
+
+  .has-label .cursor__ring::before {
+    transform: scale(2.3);
+    background: var(--cc);
+  }
+
+  .has-label .cursor__dot {
+    scale: 0;
+  }
+
+  .is-down .cursor__ring::before {
+    transform: scale(0.8);
+  }
+
+  .cursor__label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font: 700 10px/1 var(--f-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--noir);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .has-label .cursor__label {
+    opacity: 1;
+  }
+</style>

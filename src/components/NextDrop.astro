@@ -1,0 +1,385 @@
+---
+// Prochain drop façon flyer de soirée : compte à rebours, vinyle qui tourne,
+// bras de platine qui se pose quand la section arrive à l'écran.
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import Patch from './Patch.astro';
+import { site } from '../data/site';
+
+const { numero, nom, date, pieces } = site.prochainDrop;
+const quand = new Date(date);
+const fuseau = { timeZone: 'Europe/Paris' } as const;
+const jour = new Intl.DateTimeFormat('fr-FR', { ...fuseau, day: '2-digit', month: '2-digit' })
+  .format(quand)
+  .replace('/', '.');
+const heure = new Intl.DateTimeFormat('fr-FR', { ...fuseau, hour: '2-digit', minute: '2-digit' })
+  .format(quand)
+  .replace(':', 'h');
+const jourLong = new Intl.DateTimeFormat('fr-FR', { ...fuseau, weekday: 'long', day: 'numeric', month: 'long' }).format(
+  quand,
+);
+
+const UNITES = [
+  { cle: 'j', label: 'jours' },
+  { cle: 'h', label: 'heures' },
+  { cle: 'm', label: 'min' },
+  { cle: 's', label: 'sec' },
+];
+---
+
+<section class="next" id="prochain-drop" aria-labelledby="next-title" data-pop>
+  <div class="next__glow" aria-hidden="true"></div>
+
+  <div class="next__inner">
+    <div class="next__text">
+      <p class="kicker"><span class="live-dot"></span>Prochain drop</p>
+      <h2 class="next__title" id="next-title">
+        <span class="next__num">Drop {numero}</span>
+        <span class="next__name gothic">{nom}</span>
+      </h2>
+
+      <div class="cd" data-countdown={date}>
+        <p class="sr-only">Sortie le {jourLong} à {heure}.</p>
+        <div class="cd__units" aria-hidden="true">
+          {
+            UNITES.map(({ cle, label }) => (
+              <div class="cd__unit">
+                <span class="cd__num" data-unit={cle}>
+                  00
+                </span>
+                <span class="cd__label">{label}</span>
+              </div>
+            ))
+          }
+        </div>
+        <p class="cd__live">C'est en ligne. Cours.</p>
+      </div>
+
+      <p class="next__info">{jour} · {heure} · {pieces} pièces · en ligne uniquement</p>
+      <button class="btn" type="button" style="--c: var(--jaune)" data-remind={`On te prévient le ${jour} à ${heure} (démo)`}>
+        Me prévenir <Icon name="bolt" />
+      </button>
+    </div>
+
+    <div class="next__deck" aria-hidden="true">
+      <div class="vinyl">
+        <div class="vinyl__disc">
+          <div class="vinyl__label"><Logo /></div>
+        </div>
+        <div class="vinyl__shine"></div>
+      </div>
+      <svg class="tonearm" viewBox="0 0 120 260">
+        <circle class="tonearm__base" cx="90" cy="30" r="24"></circle>
+        <circle class="tonearm__pin" cx="90" cy="30" r="8"></circle>
+        <path class="tonearm__arm" d="M90 30l-6 140-44 56"></path>
+        <rect class="tonearm__head" x="22" y="214" width="36" height="22" rx="3" transform="rotate(-40 40 225)"></rect>
+      </svg>
+    </div>
+  </div>
+
+  <Patch kind="skull" color="violet" size={96} x="44%" y="9%" rotate={-10} speed={0.12} />
+</section>
+
+<script>
+  import { burst, toast } from '../scripts/fun';
+
+  document.querySelectorAll<HTMLElement>('[data-countdown]').forEach((el) => {
+    const target = new Date(el.dataset.countdown ?? '').getTime();
+    if (Number.isNaN(target)) return;
+    const section = el.closest('.next');
+    const units = new Map(
+      [...el.querySelectorAll<HTMLElement>('[data-unit]')].map((node) => [node.dataset.unit, node]),
+    );
+
+    const set = (key: string, value: number) => {
+      const node = units.get(key);
+      const text = String(value).padStart(2, '0');
+      if (!node || node.textContent === text) return;
+      node.textContent = text;
+      node.classList.remove('tick');
+      void node.offsetWidth;
+      node.classList.add('tick');
+    };
+
+    const update = () => {
+      let rest = Math.max(0, target - Date.now());
+      section?.classList.toggle('is-live', rest === 0);
+      const days = Math.floor(rest / 86_400_000);
+      rest -= days * 86_400_000;
+      const hours = Math.floor(rest / 3_600_000);
+      rest -= hours * 3_600_000;
+      const minutes = Math.floor(rest / 60_000);
+      rest -= minutes * 60_000;
+      set('j', days);
+      set('h', hours);
+      set('m', minutes);
+      set('s', Math.floor(rest / 1000));
+    };
+
+    update();
+    window.setInterval(update, 1000);
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-remind]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const rect = button.getBoundingClientRect();
+      burst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      toast(button.dataset.remind ?? '');
+    });
+  });
+</script>
+
+<style>
+  .next {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(110px, 12vw, 180px) var(--gutter);
+    background: var(--noir-2);
+    border-block: 2px solid var(--blanc);
+  }
+
+  /* Trame façon flyer photocopié par-dessus la lumière */
+  .next::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(rgb(0 0 0 / 0.55) 1.2px, transparent 1.8px) 0 0 / 6px 6px;
+  }
+
+  .next__glow {
+    position: absolute;
+    top: 50%;
+    right: -10vw;
+    z-index: -2;
+    width: min(1100px, 80vw);
+    aspect-ratio: 1;
+    translate: 0 -50%;
+    border-radius: 50%;
+    background: conic-gradient(var(--rose), var(--orange), var(--jaune), var(--acide), var(--cyan), var(--violet), var(--rose));
+    filter: blur(80px);
+    opacity: 0.32;
+    animation: spin 16s linear infinite;
+  }
+
+  .next__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    gap: clamp(40px, 6vw, 100px);
+  }
+
+  .next__title {
+    display: grid;
+    margin: 18px 0 30px;
+    line-height: 0.82;
+  }
+
+  .next__num {
+    font-family: var(--f-display);
+    font-size: clamp(64px, 10vw, 170px);
+    font-weight: 900;
+    font-stretch: 58%;
+    text-transform: uppercase;
+  }
+
+  .next__name {
+    margin-top: 0.12em;
+    font-size: clamp(40px, 5.4vw, 92px);
+    color: var(--acide);
+    rotate: -3deg;
+    transform-origin: left;
+  }
+
+  .cd__units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(10px, 1.6vw, 22px);
+  }
+
+  .cd__unit {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+  }
+
+  .cd__num {
+    display: block;
+    min-width: 1.7em;
+    padding: 0.1em 0.12em 0.02em;
+    font-family: var(--f-display);
+    font-size: clamp(44px, 5.2vw, 92px);
+    font-weight: 900;
+    font-stretch: 80%;
+    font-variant-numeric: tabular-nums;
+    line-height: 0.9;
+    text-align: center;
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    box-shadow: 6px 6px 0 var(--rose);
+  }
+
+  .cd__unit:nth-child(2) .cd__num {
+    box-shadow: 6px 6px 0 var(--cyan);
+  }
+
+  .cd__unit:nth-child(3) .cd__num {
+    box-shadow: 6px 6px 0 var(--jaune);
+  }
+
+  .cd__unit:nth-child(4) .cd__num {
+    box-shadow: 6px 6px 0 var(--acide);
+  }
+
+  .cd__num:global(.tick) {
+    animation: cd-tick 0.4s var(--ease-back);
+  }
+
+  @keyframes cd-tick {
+    from {
+      transform: translateY(-16%) skewX(-10deg);
+      background: var(--acide);
+    }
+  }
+
+  .cd__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .cd__live {
+    display: none;
+    font-family: var(--f-display);
+    font-size: clamp(40px, 5vw, 80px);
+    font-weight: 900;
+    font-stretch: 70%;
+    text-transform: uppercase;
+    color: var(--acide);
+  }
+
+  .next:global(.is-live) .cd__units {
+    display: none;
+  }
+
+  .next:global(.is-live) .cd__live {
+    display: block;
+  }
+
+  .next__info {
+    margin: 28px 0 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  /* --- Platine --- */
+
+  .next__deck {
+    position: relative;
+    justify-self: center;
+    width: min(520px, 100%);
+    aspect-ratio: 1;
+  }
+
+  .vinyl {
+    position: absolute;
+    inset: 0;
+  }
+
+  .vinyl__disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle at 50% 50%, #0c0c0e 0 1.6px, #1a1a1d 1.6px 3.2px);
+    box-shadow:
+      0 50px 90px -30px #000,
+      0 0 0 2px #000,
+      inset 0 0 0 12px #0a0a0b;
+    animation: spin 1.8s linear infinite;
+  }
+
+  .vinyl__label {
+    position: absolute;
+    inset: 31%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: conic-gradient(var(--rose), var(--orange), var(--jaune), var(--acide), var(--cyan), var(--violet), var(--rose));
+    box-shadow: 0 0 0 4px var(--noir);
+  }
+
+  .vinyl__label :global(.logo) {
+    width: 66%;
+  }
+
+  /* Le reflet reste fixe pendant que le disque tourne */
+  .vinyl__shine {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background: conic-gradient(
+      from 20deg,
+      transparent 0 8%,
+      rgb(255 255 255 / 0.16) 13%,
+      transparent 19% 50%,
+      rgb(255 255 255 / 0.1) 58%,
+      transparent 66%
+    );
+  }
+
+  .tonearm {
+    position: absolute;
+    top: -8%;
+    right: -10%;
+    width: 30%;
+    overflow: visible;
+    transform-origin: 75% 11.5%;
+    rotate: -32deg;
+    transition: rotate 1.4s var(--ease-back) 0.3s;
+  }
+
+  .next:global(.is-in) .tonearm {
+    rotate: 0deg;
+  }
+
+  .tonearm__base {
+    fill: var(--noir-3);
+    stroke: var(--blanc);
+    stroke-width: 3;
+  }
+
+  .tonearm__pin {
+    fill: var(--rose);
+  }
+
+  .tonearm__arm {
+    fill: none;
+    stroke: var(--blanc);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .tonearm__head {
+    fill: var(--blanc);
+  }
+
+  @media (max-width: 900px) {
+    .next__inner {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .next__deck {
+      width: min(380px, 84%);
+    }
+  }
+</style>

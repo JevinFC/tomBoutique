@@ -1,0 +1,77 @@
+---
+import '@fontsource-variable/anybody/wdth.css';
+import '@fontsource/unifrakturcook/700.css';
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '../styles/global.css';
+import Cursor from '../components/Cursor.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = `${site.nom} — ${site.slogan}`, description = site.description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09090a" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // Avant le premier affichage : active les animations JS et décide si l'intro doit jouer
+      (function () {
+        var root = document.documentElement;
+        root.classList.add('js');
+        var calme = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var dejaVue = false;
+        try {
+          dejaVue = sessionStorage.getItem('tb-intro') === '1';
+        } catch (e) {}
+        if (calme || dejaVue) root.classList.add('no-intro');
+        // Filet de sécurité : la page s'affiche même si un script plante
+        setTimeout(function () {
+          root.classList.add('is-ready');
+        }, 4000);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+    <div class="page">
+      <slot />
+    </div>
+
+    <div class="toast" data-toast role="status">
+      <Icon name="smiley" />
+      <span data-toast-text></span>
+    </div>
+    <div class="grain" aria-hidden="true"></div>
+    <Cursor />
+
+    <script>
+      import { initMotion } from '../scripts/motion';
+      import { initEasterEgg } from '../scripts/fun';
+
+      initMotion();
+      initEasterEgg();
+
+      // Quand on change d'onglet, le titre réclame qu'on revienne
+      const titre = document.title;
+      document.addEventListener('visibilitychange', () => {
+        document.title = document.hidden ? 'Reviens, y a du son' : titre;
+      });
+    </script>
+  </body>
+</html>

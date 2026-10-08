@@ -1,0 +1,141 @@
+---
+// Inscription à la liste (prototype : rien n'est envoyé pour l'instant).
+import Patch from './Patch.astro';
+---
+
+<section class="nl" aria-labelledby="nl-title">
+  <div class="nl__box" data-reveal>
+    <p class="kicker">(05) La liste</p>
+    <h2 class="nl__title" id="nl-title">Rejoins <span class="gothic">la liste</span></h2>
+    <p class="nl__text">Les drops 24 h avant tout le monde, les soirées, et zéro spam. Juré sur la tête de Tom.</p>
+    <form class="nl__form" data-newsletter novalidate>
+      <label class="sr-only" for="nl-email">Ton adresse e-mail</label>
+      <input id="nl-email" name="email" type="email" placeholder="ton@email.fr" autocomplete="email" required />
+      <button class="btn" type="submit" style="--c: var(--rose)">Je rentre</button>
+    </form>
+    <p class="nl__msg" data-newsletter-msg role="status"></p>
+  </div>
+
+  <Patch kind="smiley" color="cyan" size={104} x="5%" y="12%" rotate={12} speed={0.15} desktopOnly />
+  <Patch kind="heart" color="rose" size={80} x="88%" y="62%" rotate={-12} speed={-0.1} />
+</section>
+
+<script>
+  import { burst } from '../scripts/fun';
+
+  const form = document.querySelector<HTMLFormElement>('[data-newsletter]');
+  const message = document.querySelector<HTMLElement>('[data-newsletter-msg]');
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = form.querySelector<HTMLInputElement>('input[type="email"]');
+    if (!input || !message) return;
+
+    if (!input.value || !input.checkValidity()) {
+      message.textContent = 'Il manque un vrai e-mail.';
+      message.dataset.state = 'error';
+      input.focus();
+      return;
+    }
+
+    // Prototype : brancher ici un vrai service d'e-mailing (Brevo, Mailchimp…) plus tard
+    message.textContent = "C'est noté, t'es dans la liste. (démo : rien n'est envoyé)";
+    message.dataset.state = 'ok';
+    const rect = (form.querySelector('button') ?? form).getBoundingClientRect();
+    burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 30);
+    form.reset();
+  });
+</script>
+
+<style>
+  .nl {
+    position: relative;
+    padding: clamp(90px, 10vw, 150px) var(--gutter) clamp(110px, 12vw, 170px);
+  }
+
+  .nl__box {
+    position: relative;
+    max-width: 980px;
+    margin-inline: auto;
+    padding: clamp(28px, 5vw, 64px);
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    box-shadow:
+      14px 14px 0 var(--rose),
+      28px 28px 0 var(--cyan);
+    rotate: -1deg;
+  }
+
+  .nl__title {
+    margin: 12px 0 18px;
+    font-family: var(--f-display);
+    font-size: clamp(54px, 9vw, 150px);
+    font-weight: 900;
+    font-stretch: 58%;
+    line-height: 0.82;
+    text-transform: uppercase;
+  }
+
+  .nl__title .gothic {
+    font-size: 0.66em;
+    color: var(--rose);
+  }
+
+  .nl__text {
+    max-width: 46ch;
+    margin-bottom: 26px;
+    font-size: 15px;
+  }
+
+  .nl__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .nl__form input {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 16px 18px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    border-radius: 0;
+  }
+
+  .nl__form input::placeholder {
+    color: #8b8b8b;
+  }
+
+  .nl__form input:focus-visible {
+    outline: 3px solid var(--noir);
+    outline-offset: 2px;
+    box-shadow: 6px 6px 0 var(--acide);
+  }
+
+  .nl__form .btn {
+    box-shadow: 5px 5px 0 var(--noir);
+  }
+
+  @media (hover: hover) {
+    .nl__form .btn:hover {
+      box-shadow: 9px 9px 0 var(--noir);
+    }
+  }
+
+  .nl__msg {
+    min-height: 1.6em;
+    margin-top: 18px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .nl__msg[data-state='error'] {
+    color: #c4002f;
+  }
+</style>

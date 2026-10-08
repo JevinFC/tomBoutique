@@ -1,0 +1,381 @@
+---
+// Carte produit. Sans photo, une silhouette placeholder s'affiche sur un fond fluo.
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Garment from './Garment.astro';
+import Icon from './Icon.astro';
+import { formatPrix } from '../data/catalogue';
+
+interface Props {
+  produit: CollectionEntry<'produits'>;
+  /** Grande carte « pièce phare » (avec description) */
+  featured?: boolean;
+}
+
+const { produit, featured = false } = Astro.props;
+const { nom, prix, categorie, couleur, badge, tailles, photo, epuise } = produit.data;
+const description = produit.body?.trim();
+---
+
+<article class:list={['card', { 'card--featured': featured, 'card--soldout': epuise }]} style={`--c: var(--${couleur})`}>
+  <div class="card__media">
+    <div class="card__bg"></div>
+    {
+      photo ? (
+        <Image class="card__photo" src={photo} alt={nom} widths={[480, 960]} sizes="(max-width: 700px) 100vw, 33vw" />
+      ) : (
+        <Fragment>
+          <Garment type={categorie} class="card__garment" />
+          <span class="card__placeholder">[ photo à venir ]</span>
+        </Fragment>
+      )
+    }
+    {(badge || epuise) && <span class="card__badge">{epuise ? 'Épuisé' : badge}</span>}
+    {
+      epuise ? (
+        <div class="card__soldout" aria-hidden="true">
+          Sold out · Sold out · Sold out · Sold out
+        </div>
+      ) : (
+        <ul class="card__sizes" aria-label="Tailles disponibles">
+          {tailles.map((taille) => (
+            <li>{taille}</li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+
+  {featured && <p class="card__kicker">Pièce phare</p>}
+
+  <div class="card__info">
+    <h3 class="card__name">{nom}</h3>
+    <p class="card__price">{formatPrix(prix)}</p>
+  </div>
+
+  {featured && description && <p class="card__desc">{description}</p>}
+
+  <button class="card__add" type="button" data-add={nom} disabled={epuise} data-cursor={epuise ? undefined : '+1'}>
+    {
+      epuise ? (
+        'Revient bientôt (peut-être)'
+      ) : (
+        <Fragment>
+          <span>
+            Ajouter<span class="card__add-more"> au panier</span>
+          </span>
+          <Icon name="arrow" />
+        </Fragment>
+      )
+    }
+  </button>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+  }
+
+  .card__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--noir-2);
+    border: 2px solid var(--blanc);
+    transition:
+      transform 0.45s var(--ease-back),
+      box-shadow 0.45s var(--ease-back);
+  }
+
+  /* Pièce phare : grande photo à gauche, infos alignées en bas à droite */
+  .card--featured {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: 1fr repeat(4, auto);
+    gap: 18px clamp(24px, 4vw, 64px);
+  }
+
+  .card--featured .card__media {
+    grid-row: 1 / -1;
+    aspect-ratio: 5 / 4;
+  }
+
+  .card--featured > :not(.card__media) {
+    grid-column: 2;
+  }
+
+  .card--featured .card__kicker {
+    grid-row: 2;
+  }
+
+  .card--featured .card__info {
+    grid-row: 3;
+  }
+
+  .card--featured .card__desc {
+    grid-row: 4;
+  }
+
+  .card--featured .card__add {
+    grid-row: 5;
+  }
+
+  .card__kicker {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c);
+  }
+
+  .card--featured .card__info {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+
+  .card--featured .card__price {
+    padding: 6px 12px;
+    font-size: 20px;
+  }
+
+  .card--featured .card__add {
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+
+  .card__bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(rgb(0 0 0 / 0.2) 1.1px, transparent 1.6px) 0 0 / 7px 7px,
+      var(--c);
+    transition: filter 0.6s var(--ease-out);
+  }
+
+  .card__media :global(.card__garment) {
+    position: absolute;
+    inset: 8% 9% 6%;
+    width: 82%;
+    height: 86%;
+    transition: transform 0.6s var(--ease-back);
+  }
+
+  .card__media :global(.card__photo) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card__placeholder {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--noir);
+    opacity: 0.65;
+  }
+
+  .card__badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--blanc);
+    background: var(--noir);
+    border: 2px solid var(--blanc);
+    rotate: 5deg;
+  }
+
+  .card__sizes {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    transform: translateY(calc(100% + 16px));
+    transition: transform 0.45s var(--ease-back);
+  }
+
+  .card__sizes li {
+    min-width: 36px;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--blanc);
+    background: var(--noir);
+    border: 1.5px solid var(--blanc);
+  }
+
+  .card__soldout {
+    position: absolute;
+    top: 46%;
+    left: -20%;
+    width: 140%;
+    padding: 8px 0;
+    font-family: var(--f-display);
+    font-size: 26px;
+    font-weight: 900;
+    font-stretch: 70%;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--noir);
+    background: var(--blanc);
+    border-block: 3px solid var(--noir);
+    rotate: -14deg;
+  }
+
+  .card--soldout .card__bg {
+    filter: grayscale(1) brightness(0.55);
+  }
+
+  .card__info {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .card__name {
+    font-family: var(--f-display);
+    font-size: clamp(19px, 1.7vw, 26px);
+    font-weight: 800;
+    font-stretch: 78%;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .card--featured .card__name {
+    font-size: clamp(40px, 5.4vw, 92px);
+    font-stretch: 62%;
+    line-height: 0.85;
+  }
+
+  .card__price {
+    flex: none;
+    padding: 4px 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--noir);
+    background: var(--c);
+    rotate: -3deg;
+  }
+
+  .card__desc {
+    max-width: 42ch;
+    font-size: 15px;
+    color: var(--gris);
+  }
+
+  .card__add {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    justify-self: start;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 2px solid var(--blanc);
+    transition:
+      color 0.2s,
+      background-color 0.2s,
+      border-color 0.2s,
+      transform 0.35s var(--ease-back);
+  }
+
+  .card__add:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .card:focus-within .card__sizes {
+    transform: none;
+  }
+
+  @media (hover: hover) {
+    .card:hover .card__media {
+      transform: translate(-6px, -6px) rotate(-0.6deg);
+      box-shadow: 10px 10px 0 var(--c);
+    }
+
+    .card:hover .card__bg {
+      filter: hue-rotate(60deg) saturate(1.15);
+    }
+
+    .card--soldout:hover .card__bg {
+      filter: grayscale(1) brightness(0.55);
+    }
+
+    .card:hover .card__media :global(.card__garment) {
+      transform: rotate(-5deg) scale(1.07) translateY(-2%);
+    }
+
+    .card:hover .card__badge {
+      animation: wiggle 0.5s var(--ease-back);
+    }
+
+    .card:hover .card__sizes {
+      transform: none;
+    }
+
+    .card__add:not(:disabled):hover {
+      color: var(--noir);
+      background: var(--c);
+      border-color: var(--c);
+      transform: rotate(-2deg) scale(1.04);
+    }
+  }
+
+  @media (hover: none) {
+    .card__sizes {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .card--featured {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .card--featured .card__media {
+      aspect-ratio: 1;
+    }
+
+    .card:not(.card--featured) .card__placeholder {
+      display: none;
+    }
+
+    .card__add-more {
+      display: none;
+    }
+
+    .card__sizes li {
+      min-width: 28px;
+      padding: 4px 6px;
+    }
+  }
+</style>

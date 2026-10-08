@@ -1,0 +1,155 @@
+---
+// Intro : compteur 0 → 100, puis six bandes aux couleurs des cheveux de Tom balaient l'écran.
+// Elle ne joue qu'une fois par session, et jamais si le visiteur préfère moins d'animations.
+import Logo from './Logo.astro';
+
+const BANDES = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
+---
+
+<div class="loader" data-loader aria-hidden="true">
+  <div class="loader__bars">
+    {BANDES.map((couleur, i) => <span style={`--c: var(--${couleur}); --i: ${i}`} />)}
+  </div>
+  <div class="loader__center">
+    <Logo class="loader__logo" />
+    <p class="loader__count"><span data-loader-count>000</span><small>%</small></p>
+    <p class="loader__msg">Chargement des couleurs…</p>
+  </div>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const loader = document.querySelector<HTMLElement>('[data-loader]');
+  // Deux images d'attente pour que le navigateur affiche l'état initial avant d'animer
+  const ready = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('is-ready')));
+
+  if (!loader || root.classList.contains('no-intro')) {
+    loader?.remove();
+    ready();
+  } else {
+    const count = loader.querySelector<HTMLElement>('[data-loader-count]');
+    const start = performance.now();
+    const duration = 1100;
+
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      if (count) count.textContent = String(Math.round(eased * 100)).padStart(3, '0');
+      if (progress < 1) {
+        requestAnimationFrame(step);
+        return;
+      }
+      loader.classList.add('is-done');
+      try {
+        sessionStorage.setItem('tb-intro', '1');
+      } catch {
+        // stockage indisponible (navigation privée) : l'intro rejouera, ce n'est pas grave
+      }
+      window.setTimeout(ready, 450);
+      window.setTimeout(() => loader.remove(), 1500);
+    };
+    requestAnimationFrame(step);
+  }
+</script>
+
+<style>
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    background: var(--noir);
+  }
+
+  :global(html.no-intro) .loader {
+    display: none;
+  }
+
+  .loader.is-done {
+    background-color: transparent;
+    transition: background-color 0s linear 0.72s;
+  }
+
+  .loader__bars {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .loader__bars span {
+    background: var(--c);
+    transform: translateY(101%);
+  }
+
+  .loader.is-done .loader__bars span {
+    animation: loader-wipe 1.05s var(--ease-snap) forwards;
+    animation-delay: calc(var(--i) * 55ms);
+  }
+
+  @keyframes loader-wipe {
+    0% {
+      transform: translateY(101%);
+    }
+    46%,
+    54% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-101%);
+    }
+  }
+
+  .loader__center {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    text-align: center;
+    transition:
+      opacity 0.25s,
+      transform 0.25s;
+  }
+
+  .loader.is-done .loader__center {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  .loader__center :global(.loader__logo) {
+    width: clamp(96px, 14vw, 150px);
+    animation: loader-bob 0.55s ease-in-out infinite alternate;
+  }
+
+  @keyframes loader-bob {
+    from {
+      transform: rotate(-7deg) translateY(-4px);
+    }
+    to {
+      transform: rotate(7deg) translateY(4px);
+    }
+  }
+
+  .loader__count {
+    font-family: var(--f-display);
+    font-size: clamp(72px, 13vw, 160px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.85;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loader__count small {
+    font-size: 0.4em;
+    color: var(--rose);
+  }
+
+  .loader__msg {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+</style>
