@@ -1,17 +1,19 @@
 ---
-// En-tête collant : logo, navigation, panier (démo) et menu plein écran sur mobile.
+// En-tête collant : logo, navigation, lien vers le panier et menu plein écran sur mobile.
+// Les liens visent les sections de l'accueil, ils marchent donc aussi depuis les autres pages.
 import Logo from './Logo.astro';
 
 const LIENS = [
-  { label: 'Shop', href: '#drop', couleur: 'rose' },
-  { label: 'Prochain drop', href: '#prochain-drop', couleur: 'acide' },
-  { label: 'Lookbook', href: '#lookbook', couleur: 'cyan' },
-  { label: 'Qui est Tom ?', href: '#tom', couleur: 'jaune' },
+  { label: 'Shop', href: '/#drop' },
+  { label: 'Prochain drop', href: '/#prochain-drop' },
+  { label: 'Lookbook', href: '/#lookbook' },
+  { label: 'Le manifeste', href: '/#manifeste' },
 ];
+const surPanier = Astro.url.pathname.startsWith('/panier');
 ---
 
 <header class="hdr" data-header>
-  <a class="hdr__brand" href="#top" aria-label="Tom Boutique, retour en haut">
+  <a class="hdr__brand" href="/" aria-label="Tom Boutique, accueil">
     <Logo class="hdr__logo" />
     <span class="hdr__name" aria-hidden="true">Tom<span class="gothic">Boutique</span></span>
   </a>
@@ -21,7 +23,7 @@ const LIENS = [
       {
         LIENS.map((lien) => (
           <li>
-            <a href={lien.href} style={`--c: var(--${lien.couleur})`}>
+            <a href={lien.href}>
               {lien.label}
             </a>
           </li>
@@ -31,10 +33,11 @@ const LIENS = [
   </nav>
 
   <div class="hdr__actions">
-    <button class="hdr__cart" type="button" data-cart>
+    <a class="hdr__cart" href="/panier" aria-current={surPanier ? 'page' : undefined}>
       <span class="hdr__cart-label">Panier</span>
       <span class="hdr__count" data-cart-count>0</span>
-    </button>
+      <span class="sr-only">article(s)</span>
+    </a>
     <button class="hdr__burger" type="button" aria-expanded="false" aria-controls="menu" data-burger>
       <span class="sr-only">Menu</span>
       <span class="hdr__burger-lines" aria-hidden="true"></span>
@@ -47,7 +50,7 @@ const LIENS = [
     <ul>
       {
         LIENS.map((lien, i) => (
-          <li style={`--c: var(--${lien.couleur}); --i: ${i}`}>
+          <li style={`--i: ${i}`}>
             <a href={lien.href}>{lien.label}</a>
           </li>
         ))
@@ -59,7 +62,6 @@ const LIENS = [
 
 <script>
   import { onFrame } from '../scripts/ticker';
-  import { getCartCount, toast } from '../scripts/fun';
 
   const header = document.querySelector<HTMLElement>('[data-header]');
   const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
@@ -98,15 +100,6 @@ const LIENS = [
     if (!header || Math.abs(scrollY - lastY) < 8) return;
     header.classList.toggle('is-hidden', scrollY > lastY && scrollY > 400 && !menuOpen);
     lastY = scrollY;
-  });
-
-  document.querySelector('[data-cart]')?.addEventListener('click', () => {
-    const count = getCartCount();
-    toast(
-      count === 0
-        ? 'Panier vide. Pour l’instant. (démo)'
-        : `${count} article${count > 1 ? 's' : ''} dans le panier (démo)`,
-    );
   });
 </script>
 
@@ -160,7 +153,7 @@ const LIENS = [
   .hdr__name .gothic {
     margin-left: 0.18em;
     font-size: 0.92em;
-    color: var(--rose);
+    color: var(--accent);
   }
 
   .hdr__nav ul {
@@ -185,7 +178,7 @@ const LIENS = [
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: var(--c);
+    background: var(--accent);
     transform: scaleY(0) skewX(-12deg);
     transform-origin: bottom;
     transition: transform 0.35s var(--ease-back);
@@ -235,7 +228,7 @@ const LIENS = [
     padding: 0 7px;
     font-size: 12px;
     color: var(--noir);
-    background: var(--acide);
+    background: var(--accent);
     border-radius: 999px;
   }
 
@@ -246,7 +239,7 @@ const LIENS = [
   @keyframes hdr-bump {
     40% {
       transform: scale(1.7) rotate(-14deg);
-      background: var(--rose);
+      background: var(--blanc);
     }
   }
 
@@ -319,7 +312,7 @@ const LIENS = [
 
   .menu li {
     overflow: hidden;
-    border-bottom: 3px solid var(--c);
+    border-bottom: 3px solid var(--accent);
   }
 
   .menu a {
@@ -344,7 +337,7 @@ const LIENS = [
 
   .menu a:hover,
   .menu a:focus-visible {
-    color: var(--c);
+    color: var(--accent);
   }
 
   .menu__foot {

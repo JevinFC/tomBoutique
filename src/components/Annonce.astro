@@ -1,0 +1,40 @@
+---
+// Bandeau d'infos tout en haut de chaque page (il ne défile pas ; sur mobile, seule la
+// première info s'affiche). Les textes viennent de src/data/site.ts.
+import { site } from '../data/site';
+---
+
+<p class="annonce" id="top">
+  {site.annonce.map((texte) => <span>{texte}</span>)}
+</p>
+
+<style>
+  .annonce {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+    padding: 9px var(--gutter) 8px;
+    font: 700 12px/1.2 var(--f-mono);
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--noir);
+    background: var(--accent);
+  }
+
+  .annonce span:not(:last-child)::after {
+    content: '·';
+    margin-left: 14px;
+  }
+
+  @media (max-width: 700px) {
+    .annonce span:not(:first-child) {
+      display: none;
+    }
+
+    .annonce span::after {
+      display: none;
+    }
+  }
+</style>

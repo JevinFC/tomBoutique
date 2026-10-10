@@ -1,5 +1,8 @@
 ---
-// Carte produit. Sans photo, une silhouette placeholder s'affiche sur un fond fluo.
+// Carte produit : toute la carte mène à la fiche. Sans photo, une silhouette placeholder
+// s'affiche sur le fond photo commun (fond noir, flash, trame) ; le rouge ne sert qu'au prix
+// et au badge. Les pièces à taille unique s'ajoutent au panier depuis la grille, les autres
+// se choisissent sur la fiche.
 import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import Garment from './Garment.astro';
@@ -8,67 +11,82 @@ import { formatPrix } from '../data/catalogue';
 
 interface Props {
   produit: CollectionEntry<'produits'>;
-  /** Grande carte « pièce phare » (avec description) */
-  featured?: boolean;
 }
 
-const { produit, featured = false } = Astro.props;
-const { nom, prix, categorie, couleur, badge, tailles, photo, epuise } = produit.data;
-const description = produit.body?.trim();
+const { produit } = Astro.props;
+const { nom, prix, categorie, badge, tailles, photo, epuise } = produit.data;
+const lien = `/produits/${produit.id}`;
+const tailleUnique = tailles.length === 1 ? tailles[0] : null;
 ---
 
-<article class:list={['card', { 'card--featured': featured, 'card--soldout': epuise }]} style={`--c: var(--${couleur})`}>
-  <div class="card__media">
-    <div class="card__bg"></div>
-    {
-      photo ? (
-        <Image class="card__photo" src={photo} alt={nom} widths={[480, 960]} sizes="(max-width: 700px) 100vw, 33vw" />
-      ) : (
-        <Fragment>
-          <Garment type={categorie} class="card__garment" />
-          <span class="card__placeholder">[ photo à venir ]</span>
-        </Fragment>
-      )
-    }
-    {(badge || epuise) && <span class="card__badge">{epuise ? 'Épuisé' : badge}</span>}
-    {
-      epuise ? (
-        <div class="card__soldout" aria-hidden="true">
-          Sold out · Sold out · Sold out · Sold out
-        </div>
-      ) : (
-        <ul class="card__sizes" aria-label="Tailles disponibles">
-          {tailles.map((taille) => (
-            <li>{taille}</li>
-          ))}
-        </ul>
-      )
-    }
-  </div>
+<article class:list={['card', { 'card--soldout': epuise }]}>
+  <a class="card__link" href={lien} data-cursor="Voir">
+    <div class="card__media">
+      <div class="card__bg"></div>
+      {
+        photo ? (
+          <Image class="card__photo" src={photo} alt={nom} widths={[480, 960]} sizes="(max-width: 700px) 100vw, 33vw" />
+        ) : (
+          <Fragment>
+            <Garment type={categorie} class="card__garment" />
+            <span class="card__placeholder">[ photo à venir ]</span>
+          </Fragment>
+        )
+      }
+      {badge && <span class="card__badge">{badge}</span>}
+      {
+        epuise ? (
+          <div class="card__soldout" aria-hidden="true">
+            Sold out · Sold out · Sold out · Sold out
+          </div>
+        ) : (
+          <ul class="card__sizes" aria-label="Tailles disponibles">
+            {tailles.map((taille) => (
+              <li>{taille}</li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
 
-  {featured && <p class="card__kicker">Pièce phare</p>}
+    <div class="card__info">
+      <h3 class="card__name">{nom}</h3>
+      <p class="card__price">{formatPrix(prix)}</p>
+      {epuise && <p class="sr-only">Épuisé</p>}
+    </div>
+  </a>
 
-  <div class="card__info">
-    <h3 class="card__name">{nom}</h3>
-    <p class="card__price">{formatPrix(prix)}</p>
-  </div>
-
-  {featured && description && <p class="card__desc">{description}</p>}
-
-  <button class="card__add" type="button" data-add={nom} disabled={epuise} data-cursor={epuise ? undefined : '+1'}>
-    {
-      epuise ? (
-        'Revient bientôt (peut-être)'
-      ) : (
-        <Fragment>
-          <span>
-            Ajouter<span class="card__add-more"> au panier</span>
-          </span>
-          <Icon name="arrow" />
-        </Fragment>
-      )
-    }
-  </button>
+  {
+    epuise ? (
+      <a class="card__add" href="/#liste">
+        <span>
+          Épuisé<span class="card__add-more"> · rejoins la liste</span>
+        </span>
+        <Icon name="arrow" />
+      </a>
+    ) : tailleUnique ? (
+      <button
+        class="card__add"
+        type="button"
+        data-add-id={produit.id}
+        data-add-taille={tailleUnique}
+        data-add-nom={nom}
+        data-cursor="+1"
+      >
+        <span>
+          Ajouter<span class="card__add-more"> au panier</span>
+        </span>
+        <Icon name="arrow" />
+      </button>
+    ) : (
+      <a class="card__add" href={lien}>
+        <span>
+          Choisir<span class="card__add-more"> ma taille</span>
+        </span>
+        <Icon name="arrow" />
+      </a>
+    )
+  }
 </article>
 
 <style>
@@ -78,6 +96,12 @@ const description = produit.body?.trim();
     flex-direction: column;
     gap: 12px;
     height: 100%;
+  }
+
+  .card__link {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .card__media {
@@ -91,70 +115,11 @@ const description = produit.body?.trim();
       box-shadow 0.45s var(--ease-back);
   }
 
-  /* Pièce phare : grande photo à gauche, infos alignées en bas à droite */
-  .card--featured {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    grid-template-rows: 1fr repeat(4, auto);
-    gap: 18px clamp(24px, 4vw, 64px);
-  }
-
-  .card--featured .card__media {
-    grid-row: 1 / -1;
-    aspect-ratio: 5 / 4;
-  }
-
-  .card--featured > :not(.card__media) {
-    grid-column: 2;
-  }
-
-  .card--featured .card__kicker {
-    grid-row: 2;
-  }
-
-  .card--featured .card__info {
-    grid-row: 3;
-  }
-
-  .card--featured .card__desc {
-    grid-row: 4;
-  }
-
-  .card--featured .card__add {
-    grid-row: 5;
-  }
-
-  .card__kicker {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--c);
-  }
-
-  .card--featured .card__info {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 16px;
-  }
-
-  .card--featured .card__price {
-    padding: 6px 12px;
-    font-size: 20px;
-  }
-
-  .card--featured .card__add {
-    padding: 14px 20px;
-    font-size: 14px;
-  }
-
+  /* Le fond commun façon photo au flash (il s'éclaire au survol) */
   .card__bg {
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(rgb(0 0 0 / 0.2) 1.1px, transparent 1.6px) 0 0 / 7px 7px,
-      var(--c);
+    background: var(--photo-trame), var(--photo-flash);
     transition: filter 0.6s var(--ease-out);
   }
 
@@ -178,12 +143,11 @@ const description = produit.body?.trim();
     position: absolute;
     top: 12px;
     left: 12px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--noir);
-    opacity: 0.65;
+    color: var(--gris);
   }
 
   .card__badge {
@@ -191,13 +155,13 @@ const description = produit.body?.trim();
     top: 12px;
     right: 12px;
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--blanc);
-    background: var(--noir);
-    border: 2px solid var(--blanc);
+    color: var(--noir);
+    background: var(--accent);
+    border: 2px solid var(--noir);
     rotate: 5deg;
   }
 
@@ -217,7 +181,7 @@ const description = produit.body?.trim();
   .card__sizes li {
     min-width: 36px;
     padding: 6px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     text-align: center;
     color: var(--blanc);
@@ -262,12 +226,7 @@ const description = produit.body?.trim();
     font-stretch: 78%;
     line-height: 1;
     text-transform: uppercase;
-  }
-
-  .card--featured .card__name {
-    font-size: clamp(40px, 5.4vw, 92px);
-    font-stretch: 62%;
-    line-height: 0.85;
+    transition: color 0.2s;
   }
 
   .card__price {
@@ -276,21 +235,15 @@ const description = produit.body?.trim();
     font-size: 14px;
     font-weight: 700;
     color: var(--noir);
-    background: var(--c);
+    background: var(--accent);
     rotate: -3deg;
   }
 
-  .card__desc {
-    max-width: 42ch;
-    font-size: 15px;
-    color: var(--gris);
-  }
-
+  /* Bouton secondaire (contour crème), comme .btn--ghost en plus petit */
   .card__add {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
-    justify-self: start;
     gap: 8px;
     padding: 10px 14px;
     font-size: 12px;
@@ -301,13 +254,7 @@ const description = produit.body?.trim();
     transition:
       color 0.2s,
       background-color 0.2s,
-      border-color 0.2s,
       transform 0.35s var(--ease-back);
-  }
-
-  .card__add:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
   }
 
   .card:focus-within .card__sizes {
@@ -316,12 +263,12 @@ const description = produit.body?.trim();
 
   @media (hover: hover) {
     .card:hover .card__media {
-      transform: translate(-6px, -6px) rotate(-0.6deg);
-      box-shadow: 10px 10px 0 var(--c);
+      transform: translate(calc(var(--ombre) * -1), calc(var(--ombre) * -1)) rotate(-0.6deg);
+      box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
     }
 
     .card:hover .card__bg {
-      filter: hue-rotate(60deg) saturate(1.15);
+      filter: brightness(1.35);
     }
 
     .card--soldout:hover .card__bg {
@@ -340,10 +287,13 @@ const description = produit.body?.trim();
       transform: none;
     }
 
-    .card__add:not(:disabled):hover {
+    .card__link:hover .card__name {
+      color: var(--accent);
+    }
+
+    .card__add:hover {
       color: var(--noir);
-      background: var(--c);
-      border-color: var(--c);
+      background: var(--blanc);
       transform: rotate(-2deg) scale(1.04);
     }
   }
@@ -354,28 +304,21 @@ const description = produit.body?.trim();
     }
   }
 
-  @media (max-width: 1000px) {
-    .card--featured {
-      display: flex;
-    }
-  }
-
+  /* Petites cartes : pas de tailles par-dessus le vêtement, et le prix passe sous le nom */
   @media (max-width: 560px) {
-    .card--featured .card__media {
-      aspect-ratio: 1;
+    .card__placeholder,
+    .card__sizes {
+      display: none;
     }
 
-    .card:not(.card--featured) .card__placeholder {
-      display: none;
+    .card__info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
     }
 
     .card__add-more {
       display: none;
-    }
-
-    .card__sizes li {
-      min-width: 28px;
-      padding: 4px 6px;
     }
   }
 </style>

@@ -1,0 +1,352 @@
+---
+// Page introuvable : le zéro de « 404 » est le vinyle du prochain drop, qui saute à chaque tour
+// (le bras de platine décolle). Un clic dessus, et il se fait scratcher.
+import Base from '../layouts/Base.astro';
+import Annonce from '../components/Annonce.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import Icon from '../components/Icon.astro';
+import Logo from '../components/Logo.astro';
+import Tape from '../components/Tape.astro';
+import { site } from '../data/site';
+---
+
+<Base title={`Page introuvable — ${site.nom}`}>
+  <Annonce />
+  <Header />
+
+  <main id="contenu" class="perdu">
+    <p class="kicker perdu__kicker">(Erreur 404)</p>
+
+    <div class="perdu__code">
+      <span class="sr-only">404</span>
+      <span class="perdu__chiffre" aria-hidden="true">4</span>
+      <button class="perdu__platine" type="button" data-scratch data-cursor="Scratch" aria-label="Scratcher le disque">
+        <span class="perdu__disque">
+          <span class="perdu__etiquette"><Logo /></span>
+        </span>
+        <span class="perdu__reflet"></span>
+        <svg class="perdu__bras" viewBox="0 0 120 260" aria-hidden="true">
+          <circle class="bras__socle" cx="90" cy="30" r="24"></circle>
+          <circle class="bras__axe" cx="90" cy="30" r="8"></circle>
+          <path class="bras__tige" d="M90 30l-6 140-44 56"></path>
+          <rect class="bras__tete" x="22" y="214" width="36" height="22" rx="3" transform="rotate(-40 40 225)"></rect>
+        </svg>
+      </button>
+      <span class="perdu__chiffre" aria-hidden="true">4</span>
+    </div>
+
+    <div class="perdu__texte">
+      <h1 class="perdu__titre">Le disque a sauté<span class="perdu__point">.</span></h1>
+      <div class="perdu__suite">
+        <p class="perdu__phrase">Cette page n'existe pas, ou plus. On l'a cherchée jusqu'au fond du sous-sol.</p>
+        <p class="perdu__piste" data-piste hidden>Piste demandée&nbsp;: <code data-chemin></code></p>
+        <div class="perdu__actions">
+          <a class="btn" href="/">Retour à l'accueil <Icon name="arrow" /></a>
+          <a class="btn btn--ghost" href="/#drop">Voir le drop</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="perdu__bande">
+    <Tape items={['Erreur 404', 'Page introuvable', 'Le disque a sauté', 'Retour au son']} angle={-2} />
+  </div>
+
+  <Footer />
+</Base>
+
+<script>
+  import { toast } from '../scripts/fun';
+
+  // L'adresse tapée, affichée comme le titre d'une piste (textContent : jamais interprétée)
+  const piste = document.querySelector<HTMLElement>('[data-piste]');
+  const chemin = piste?.querySelector<HTMLElement>('[data-chemin]');
+  if (piste && chemin && window.location.pathname !== '/404') {
+    let adresse = window.location.pathname;
+    try {
+      adresse = decodeURIComponent(adresse);
+    } catch {
+      // Adresse mal encodée : on l'affiche telle quelle
+    }
+    chemin.textContent = adresse;
+    piste.hidden = false;
+  }
+
+  // Un clic : le disque part en arrière puis repart, comme sous les doigts d'un DJ
+  const REPLIQUES = ['Wiki-wiki.', 'Toujours pas de page.', 'Elle est partie en after.', 'Ok, on arrête.'];
+  let scratchs = 0;
+  const platine = document.querySelector<HTMLElement>('[data-scratch]');
+  platine?.addEventListener('click', () => {
+    platine.classList.remove('is-scratch');
+    void platine.offsetWidth;
+    platine.classList.add('is-scratch');
+    toast(REPLIQUES[scratchs++ % REPLIQUES.length]);
+  });
+  platine?.addEventListener('animationend', (event) => {
+    if (event.animationName.includes('scratch')) platine.classList.remove('is-scratch');
+  });
+</script>
+
+<style>
+  .perdu {
+    /* Sert de mesure au 404, qui prend toute la largeur (unités cqi) */
+    container-type: inline-size;
+    display: grid;
+    gap: clamp(20px, 3vw, 36px);
+    padding: clamp(28px, 3.5vw, 56px) var(--gutter) clamp(110px, 12vw, 170px);
+  }
+
+  /* --- 404 : deux chiffres et un vinyle, d'un bord à l'autre --- */
+
+  .perdu__code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.06em;
+    font-family: var(--f-display);
+    /* « 404 » fait environ 1,9 fois sa taille de police en largeur ; sur un écran très large
+       mais peu haut, la taille plafonne et les chiffres s'écartent un peu pour garder toute la largeur */
+    font-size: min(100cqi / 1.92, 75svh);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.8;
+  }
+
+  .perdu__chiffre {
+    display: block;
+  }
+
+  /* Le vinyle remplace le zéro : un peu plus grand que les chiffres, centré sur eux */
+  .perdu__platine {
+    position: relative;
+    flex: none;
+    width: 0.86em;
+    aspect-ratio: 1;
+    translate: 0 -0.07em;
+  }
+
+  .perdu__disque {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle at 50% 50%, #0c0c0e 0 1.6px, #1a1a1d 1.6px 3.2px);
+    box-shadow:
+      0 0 0 0.012em var(--blanc),
+      0 0.06em 0.1em -0.03em #000,
+      inset 0 0 0 0.03em #0a0a0b;
+    animation: saut 3s linear infinite;
+  }
+
+  .perdu__etiquette {
+    position: absolute;
+    inset: 31%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    /* Étiquette rouge, comme sur le vinyle du prochain drop : seuls les cheveux de Tom sont en couleur */
+    background: var(--accent);
+    box-shadow: 0 0 0 0.01em var(--noir);
+  }
+
+  .perdu__etiquette :global(.logo) {
+    width: 66%;
+  }
+
+  /* Le reflet reste fixe pendant que le disque tourne */
+  .perdu__reflet {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background: conic-gradient(
+      from 20deg,
+      transparent 0 8%,
+      rgb(255 255 255 / 0.16) 13%,
+      transparent 19% 50%,
+      rgb(255 255 255 / 0.1) 58%,
+      transparent 66%
+    );
+  }
+
+  .perdu__bras {
+    position: absolute;
+    top: -8%;
+    right: -10%;
+    width: 30%;
+    overflow: visible;
+    transform-origin: 75% 11.5%;
+    animation: bras 3s linear infinite;
+  }
+
+  .bras__socle {
+    fill: var(--noir-3);
+    stroke: var(--blanc);
+    stroke-width: 3;
+  }
+
+  .bras__axe {
+    fill: var(--accent);
+  }
+
+  .bras__tige {
+    fill: none;
+    stroke: var(--blanc);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .bras__tete {
+    fill: var(--blanc);
+  }
+
+  /* Un tour et demi normal, puis l'accroc : le disque bégaie en arrière, et repart */
+  @keyframes saut {
+    0% {
+      rotate: 0deg;
+    }
+    70% {
+      rotate: 504deg;
+    }
+    72% {
+      rotate: 474deg;
+    }
+    75% {
+      rotate: 496deg;
+    }
+    77% {
+      rotate: 482deg;
+    }
+    100% {
+      rotate: 720deg;
+    }
+  }
+
+  /* Au même moment, la tête de lecture décolle du sillon */
+  @keyframes bras {
+    0%,
+    69%,
+    80%,
+    100% {
+      rotate: 0deg;
+    }
+    71% {
+      rotate: -7deg;
+    }
+    74% {
+      rotate: 1.5deg;
+    }
+    76% {
+      rotate: -3deg;
+    }
+  }
+
+  /* Le scratch : retour en arrière, puis le disque est relancé */
+  .perdu__platine:global(.is-scratch) .perdu__disque {
+    animation: scratch 0.7s var(--ease-snap);
+  }
+
+  .perdu__platine:global(.is-scratch) .perdu__bras {
+    animation: none;
+  }
+
+  @keyframes scratch {
+    0% {
+      rotate: 0deg;
+    }
+    30% {
+      rotate: -150deg;
+    }
+    55% {
+      rotate: -40deg;
+    }
+    70% {
+      rotate: -110deg;
+    }
+    100% {
+      rotate: 0deg;
+    }
+  }
+
+  @media (hover: hover) {
+    .perdu__platine:hover .perdu__disque {
+      animation-duration: 1.6s;
+    }
+
+    .perdu__platine:hover .perdu__bras {
+      animation-duration: 1.6s;
+    }
+  }
+
+  /* --- Le texte --- */
+
+  /* Sous le 404, séparé par un filet crème comme les en-têtes de section : le titre, puis le reste */
+  .perdu__texte {
+    display: grid;
+    gap: 24px;
+    padding-top: clamp(20px, 2.5vw, 32px);
+    border-top: 2px solid var(--blanc);
+  }
+
+  .perdu__suite {
+    display: grid;
+    justify-items: start;
+    gap: 20px;
+  }
+
+  .perdu__titre {
+    font-family: var(--f-display);
+    font-size: clamp(48px, 7vw, 120px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.84;
+    text-transform: uppercase;
+  }
+
+  .perdu__point {
+    color: var(--accent);
+  }
+
+  .perdu__phrase {
+    max-width: 42ch;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .perdu__piste {
+    max-width: 100%;
+    font-size: 13px;
+    color: var(--gris);
+    overflow-wrap: anywhere;
+  }
+
+  .perdu__piste code {
+    padding: 0.15em 0.45em;
+    font-family: var(--f-mono);
+    color: var(--noir);
+    background: var(--blanc);
+  }
+
+  .perdu__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 20px;
+    margin-top: 8px;
+  }
+
+  /* La bande rouge traverse le bas de la page, juste avant le pied de page */
+  .perdu__bande {
+    position: relative;
+    z-index: 6;
+    margin: clamp(-90px, -6vw, -50px) 0 clamp(36px, 4vw, 60px);
+    pointer-events: none;
+  }
+
+  @media (min-width: 900px) {
+    .perdu__texte {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      column-gap: clamp(32px, 5vw, 80px);
+    }
+  }
+</style>

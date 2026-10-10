@@ -4,31 +4,45 @@
    ========================================================================== */
 
 :root {
+  /* DA : le noir domine, le rouge complète, et l'arc-en-ciel n'existe que dans les cheveux de Tom */
+
   /* Le noir (et ses nuances) */
   --noir: #09090a;
   --noir-2: #111113;
   --noir-3: #1b1b1f;
   --ligne: #2b2b30;
   --gris: #9a9aa2;
+  /* Le crème : le texte et les « papiers » (polaroids, newsletter) */
   --blanc: #f4f0e8;
 
-  /* Les couleurs des cheveux de Tom */
-  --rose: #ff2e88;
-  --acide: #c5ff1f;
-  --cyan: #1fe4ff;
-  --jaune: #ffe23d;
-  --orange: #ff6b1c;
-  --violet: #a066ff;
-  --arc: linear-gradient(
-    90deg,
-    var(--rose),
-    var(--orange),
-    var(--jaune),
-    var(--acide),
-    var(--cyan),
-    var(--violet),
-    var(--rose)
+  /* Le rouge, seule couleur d'accent : actions et infos (boutons, prix, badges, surlignage,
+     scotch, compte à rebours) */
+  --accent: #ff2b2b;
+
+  /* Les cheveux de Tom : le logo, les imprimés des vêtements, l'intro et le mot « cheveux » */
+  --cheveux-1: #ff2e88;
+  --cheveux-2: #ff6b1c;
+  --cheveux-3: #ffe23d;
+  --cheveux-4: #c5ff1f;
+  --cheveux-5: #1fe4ff;
+  --cheveux-6: #a066ff;
+  /* Les six mèches en bandes franches (pas de dégradé), pour surligner */
+  --cheveux: linear-gradient(
+    110deg,
+    var(--cheveux-1) 0 16.667%,
+    var(--cheveux-2) 0 33.333%,
+    var(--cheveux-3) 0 50%,
+    var(--cheveux-4) 0 66.667%,
+    var(--cheveux-5) 0 83.333%,
+    var(--cheveux-6) 0
   );
+
+  /* Une seule direction photo (cartes, polaroid, lookbook) : fond noir, flash direct, trame */
+  --photo-flash: radial-gradient(circle at 50% 36%, #4a4a52, #1a1a1e 55%, #0d0d0f);
+  --photo-trame: radial-gradient(rgb(255 255 255 / 0.1) 1px, transparent 1.6px) 0 0 / 5px 5px;
+
+  /* Ombre « collée », même décalage partout : rouge sous le crème, crème sous le rouge */
+  --ombre: 6px;
 
   --f-display: 'Anybody Variable', 'Arial Narrow', Impact, sans-serif;
   --f-gothic: 'UnifrakturCook', 'Old English Text MT', serif;
@@ -54,6 +68,11 @@
 
 * {
   margin: 0;
+}
+
+/* Un élément masqué l'est vraiment, même s'il a un display: flex ou grid */
+[hidden] {
+  display: none !important;
 }
 
 html {
@@ -114,12 +133,12 @@ ol {
 }
 
 ::selection {
-  background: var(--rose);
+  background: var(--accent);
   color: var(--noir);
 }
 
 :focus-visible {
-  outline: 3px solid var(--acide);
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
@@ -149,7 +168,7 @@ ol {
   left: 12px;
   z-index: 300;
   padding: 10px 14px;
-  background: var(--acide);
+  background: var(--accent);
   color: var(--noir);
   font-weight: 700;
   transform: translateY(-200%);
@@ -182,23 +201,24 @@ ol {
   height: 10px;
   flex: none;
   border-radius: 50%;
-  background: var(--acide);
+  background: var(--accent);
   animation: live 1.6s ease-out infinite;
 }
 
 @keyframes live {
   from {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--acide) 70%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
   }
   to {
     box-shadow: 0 0 0 12px transparent;
   }
 }
 
-/* --- Boutons -------------------------------------------------------------- */
+/* --- Boutons ---------------------------------------------------------------
+   Un seul principal (rouge plein, ombre crème) et un seul secondaire (--ghost : contour
+   crème, l'ombre rouge n'apparaît qu'au survol). */
 
 .btn {
-  --c: var(--rose);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -208,12 +228,13 @@ ol {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--noir);
-  background: var(--c);
+  background: var(--accent);
   border: 2px solid var(--noir);
-  box-shadow: 5px 5px 0 var(--blanc);
+  box-shadow: var(--ombre) var(--ombre) 0 var(--blanc);
   transition:
     transform 0.25s var(--ease-back),
     box-shadow 0.25s var(--ease-back),
+    color 0.2s,
     background-color 0.2s;
 }
 
@@ -225,13 +246,13 @@ ol {
   color: var(--blanc);
   background: transparent;
   border-color: var(--blanc);
-  box-shadow: 5px 5px 0 var(--c);
+  box-shadow: none;
 }
 
 @media (hover: hover) {
   .btn:hover {
     transform: translate(-3px, -3px) rotate(-1deg);
-    box-shadow: 9px 9px 0 var(--blanc);
+    box-shadow: calc(var(--ombre) + 3px) calc(var(--ombre) + 3px) 0 var(--blanc);
   }
 
   .btn:hover .icon {
@@ -241,7 +262,7 @@ ol {
   .btn--ghost:hover {
     color: var(--noir);
     background: var(--blanc);
-    box-shadow: 9px 9px 0 var(--c);
+    box-shadow: calc(var(--ombre) + 3px) calc(var(--ombre) + 3px) 0 var(--accent);
   }
 }
 
@@ -362,8 +383,8 @@ html.is-ready:not(.motion-ok) [data-reveal] {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   background: var(--noir);
-  border: 2px solid var(--acide);
-  box-shadow: 6px 6px 0 var(--rose);
+  border: 2px solid var(--blanc);
+  box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
   pointer-events: none;
   transform: translateY(170%) rotate(-4deg);
   transition: transform 0.55s var(--ease-back);
@@ -375,18 +396,15 @@ html.is-ready:not(.motion-ok) [data-reveal] {
 
 .toast .icon {
   font-size: 24px;
-  color: var(--acide);
+  color: var(--accent);
 }
 
 /* --- Curseur maison (le curseur natif n'est masqué que si le JS l'a activé) - */
+/* Partout, champs compris : le point blanc reste le seul curseur (le champ affiche son trait de saisie) */
 
 html.has-cursor,
 html.has-cursor * {
   cursor: none !important;
-}
-
-html.has-cursor input {
-  cursor: text !important;
 }
 
 /* --- Grain photocopie par-dessus tout le site ----------------------------- */
@@ -454,6 +472,7 @@ html.has-cursor input {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;

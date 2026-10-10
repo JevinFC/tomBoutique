@@ -1,14 +1,16 @@
 ---
-// Intro : compteur 0 → 100, puis six bandes aux couleurs des cheveux de Tom balaient l'écran.
+// Intro : compteur 0 → 100, puis six bandes aux couleurs des cheveux de Tom balaient l'écran
+// (avec le logo, c'est l'un des rares endroits où l'arc-en-ciel a le droit d'exister).
 // Elle ne joue qu'une fois par session, et jamais si le visiteur préfère moins d'animations.
 import Logo from './Logo.astro';
 
-const BANDES = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
+// Une bande par mèche (--cheveux-1 à --cheveux-6)
+const BANDES = [1, 2, 3, 4, 5, 6];
 ---
 
 <div class="loader" data-loader aria-hidden="true">
   <div class="loader__bars">
-    {BANDES.map((couleur, i) => <span style={`--c: var(--${couleur}); --i: ${i}`} />)}
+    {BANDES.map((meche, i) => <span style={`--c: var(--cheveux-${meche}); --i: ${i}`} />)}
   </div>
   <div class="loader__center">
     <Logo class="loader__logo" />
@@ -142,7 +144,7 @@ const BANDES = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
 
   .loader__count small {
     font-size: 0.4em;
-    color: var(--rose);
+    color: var(--accent);
   }
 
   .loader__msg {

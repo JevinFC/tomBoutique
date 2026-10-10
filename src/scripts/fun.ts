@@ -1,7 +1,8 @@
-// Petites réactions joyeuses : confettis, toast, panier de démonstration, easter egg.
+// Petites réactions joyeuses : confettis, toast, easter egg (le panier, lui, vit dans panier.ts).
 import { reducedMotion } from './ticker';
 
-const COLORS = ['--rose', '--acide', '--cyan', '--jaune', '--orange', '--violet'];
+// Confettis rouges et crème : l'arc-en-ciel reste réservé aux cheveux de Tom
+const COLORS = ['--accent', '--blanc'];
 
 /** Explosion de confettis colorés depuis un point de l'écran. */
 export function burst(x: number, y: number, count = 22) {
@@ -52,22 +53,6 @@ export function toast(message: string) {
   el.classList.add('is-on');
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => el.classList.remove('is-on'), 3000);
-}
-
-let cartCount = 0;
-export const getCartCount = () => cartCount;
-
-/** Panier de démonstration : rien n'est vendu, le compteur de l'en-tête monte juste. */
-export function addToCart(name: string, from?: { x: number; y: number }) {
-  cartCount += 1;
-  document.querySelectorAll<HTMLElement>('[data-cart-count]').forEach((el) => {
-    el.textContent = String(cartCount);
-    el.classList.remove('bump');
-    void el.offsetWidth;
-    el.classList.add('bump');
-  });
-  if (from) burst(from.x, from.y);
-  toast(`${name} ajouté au panier (démo)`);
 }
 
 /** Easter egg : taper « tom » au clavier fait pleuvoir des confettis. */

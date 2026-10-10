@@ -1,0 +1,369 @@
+---
+// Retour de Stripe après le paiement : la commande est relue côté serveur (on ne croit pas
+// l'adresse sur parole), puis le panier est vidé dans le navigateur. Une commande payée a droit
+// à des confettis et au cœur de Tom, qui bat à 140 BPM.
+import Base from '../layouts/Base.astro';
+import Annonce from '../components/Annonce.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import Icon from '../components/Icon.astro';
+import { formatCentimes } from '../data/catalogue';
+import { site } from '../data/site';
+import { stripeTest } from '../lib/stripe';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+interface Commande {
+  numero: string;
+  lignes: { nom: string; quantite: number; montant: number }[];
+  livraison: number;
+  total: number;
+}
+
+let etat: 'payee' | 'en-attente' | 'introuvable' = 'introuvable';
+let commande: Commande | null = null;
+
+const sessionId = Astro.url.searchParams.get('session_id') ?? '';
+const stripe = stripeTest();
+
+if (stripe && /^cs_test_[A-Za-z0-9]{8,250}$/.test(sessionId)) {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['line_items'] });
+    etat = session.payment_status === 'paid' ? 'payee' : 'en-attente';
+    commande = {
+      numero: session.id.slice(-8).toUpperCase(),
+      lignes: (session.line_items?.data ?? []).map((ligne) => ({
+        nom: ligne.description ?? 'Article',
+        quantite: ligne.quantity ?? 1,
+        montant: ligne.amount_total,
+      })),
+      livraison: session.shipping_cost?.amount_total ?? 0,
+      total: session.amount_total ?? 0,
+    };
+  } catch {
+    etat = 'introuvable';
+  }
+}
+
+// Le cœur, et les mèches de Tom (même tracé que dans src/components/Logo.astro)
+const COEUR =
+  'M100 182C58 152 8 116 8 66 8 34 32 10 61 10c18 0 32 10 39 24 7-14 21-24 39-24 29 0 53 24 53 56 0 50-50 86-92 116z';
+const MECHES =
+  'M20 62L13 40 24 45 20 21 33 31 33 7 45 25 54 3 60 24 74 9 72 30 88 23 80 42 93 46 81 58 81 62 74 51 68 43 62 51 55 41 48 51 41 43 34 52 28 46 24 60z';
+const BANDES = Array.from({ length: 18 }, (_, i) => (i % 6) + 1);
+---
+
+<Base title={`Merci — ${site.nom}`}>
+  <Annonce />
+  <Header />
+
+  <main id="contenu" class:list={['merci', { 'merci--payee': etat === 'payee' && commande }]} data-etat={etat}>
+    {
+      etat === 'payee' && commande ? (
+        <Fragment>
+          <p class="kicker">Commande de test n° {commande.numero}</p>
+          <h1 class="merci__titre">
+            Merci<span class="merci__point">.</span>
+          </h1>
+
+          <button class="merci__coeur" type="button" data-coeur data-cursor="Encore" aria-label="Encore des confettis">
+            <svg viewBox="0 -30 200 220" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <defs>
+                <clipPath id="merci-meches">
+                  <path d={MECHES} />
+                </clipPath>
+              </defs>
+              {/* Les mèches arc-en-ciel dépassent du haut du cœur */}
+              <g transform="translate(100 30) translate(-53 -55)">
+                <g clip-path="url(#merci-meches)">
+                  {BANDES.map((meche, i) => (
+                    <rect
+                      x={-124 + i * 14}
+                      y="-10"
+                      width="14.6"
+                      height="100"
+                      transform="skewX(-22)"
+                      style={`fill: var(--cheveux-${meche})`}
+                    />
+                  ))}
+                </g>
+                <path class="coeur__meches" d={MECHES} />
+              </g>
+              {/* Le cœur, brodé comme les patchs : contour noir et points de couture */}
+              <path class="coeur__fond" d={COEUR} />
+              <path class="coeur__couture" d={COEUR} transform="translate(100 92) scale(0.86) translate(-100 -92)" />
+              {/* Le visage de Tom : yeux en croix et sourire */}
+              <path
+                class="coeur__visage"
+                d="M36 61l7 7m0-7l-7 7M57 61l7 7m0-7l-7 7M38 76q12 10 24 0"
+                transform="translate(100 98) scale(1.9) translate(-50 -70)"
+              />
+            </svg>
+          </button>
+
+          <p class="merci__texte">Ta commande est passée. On la prépare, toi prépare la soirée.</p>
+          <div class="merci__ticket">
+            <ul class="merci__lignes">
+              {commande.lignes.map((ligne) => (
+                <li>
+                  <span>
+                    {ligne.quantite} × {ligne.nom}
+                  </span>
+                  <span>{formatCentimes(ligne.montant)}</span>
+                </li>
+              ))}
+              <li>
+                <span>Livraison</span>
+                <span>{commande.livraison === 0 ? 'Offerte' : formatCentimes(commande.livraison)}</span>
+              </li>
+            </ul>
+            <p class="merci__total">
+              <span>Total</span>
+              <span>{formatCentimes(commande.total)}</span>
+            </p>
+          </div>
+          <p class="merci__note">C'était un paiement de test Stripe&nbsp;: aucune vraie carte, aucun argent n'a bougé.</p>
+          <a class="btn" href="/#drop">
+            Retour au drop <Icon name="arrow" />
+          </a>
+        </Fragment>
+      ) : etat === 'en-attente' ? (
+        <Fragment>
+          <h1 class="merci__titre">
+            Presque<span class="merci__point">.</span>
+          </h1>
+          <p class="merci__texte">Stripe valide encore le paiement. Recharge la page dans un instant.</p>
+        </Fragment>
+      ) : (
+        <Fragment>
+          <h1 class="merci__titre">
+            Oups<span class="merci__point">.</span>
+          </h1>
+          <p class="merci__texte">On ne retrouve pas cette commande. Ton panier, lui, est toujours là.</p>
+          <a class="btn" href="/panier">
+            Voir le panier <Icon name="arrow" />
+          </a>
+        </Fragment>
+      )
+    }
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  import { burst } from '../scripts/fun';
+  import { viderPanier } from '../scripts/panier';
+
+  const coeur = document.querySelector<HTMLElement>('[data-coeur]');
+
+  // Confettis depuis les deux bosses et la pointe du cœur
+  const feuDArtifice = (quantite = 26) => {
+    const rect = coeur?.querySelector('svg')?.getBoundingClientRect();
+    if (!rect) return;
+    const points = [
+      [0.3, 0.3],
+      [0.7, 0.3],
+      [0.5, 0.75],
+    ];
+    points.forEach(([x, y], i) =>
+      window.setTimeout(() => burst(rect.left + rect.width * x, rect.top + rect.height * y, quantite), i * 140),
+    );
+  };
+
+  // Commande confirmée par Stripe : le panier repart à zéro, et on fête ça quand le cœur est collé
+  if (document.querySelector('[data-etat="payee"]')) {
+    viderPanier();
+    window.setTimeout(() => feuDArtifice(30), 750);
+  }
+
+  coeur?.addEventListener('click', () => feuDArtifice());
+</script>
+
+<style>
+  .merci {
+    display: grid;
+    justify-items: start;
+    gap: 22px;
+    min-height: 60vh;
+    padding: clamp(48px, 7vw, 110px) var(--gutter) clamp(90px, 10vw, 150px);
+  }
+
+  /* Commande payée : le texte à gauche, le cœur à droite, du titre jusqu'au bouton */
+  .merci--payee {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: clamp(24px, 5vw, 80px);
+  }
+
+  .merci--payee > * {
+    grid-column: 1;
+  }
+
+  .merci__titre {
+    font-family: var(--f-display);
+    font-size: clamp(80px, 16vw, 260px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.8;
+    text-transform: uppercase;
+  }
+
+  .merci__point {
+    color: var(--accent);
+  }
+
+  .merci__texte {
+    max-width: 46ch;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* --- Le cœur de Tom --- */
+
+  .merci__coeur {
+    position: relative;
+    grid-column: 2;
+    grid-row: 2 / span 5;
+    align-self: stretch;
+    justify-self: stretch;
+    min-height: 260px;
+  }
+
+  .merci__coeur svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    /* Ombre « collée » : crème sous le rouge, comme partout sur le site */
+    filter: drop-shadow(var(--ombre) var(--ombre) 0 var(--blanc));
+  }
+
+  .coeur__fond {
+    fill: var(--accent);
+    stroke: var(--noir);
+    stroke-width: 5;
+    stroke-linejoin: round;
+  }
+
+  .coeur__couture {
+    fill: none;
+    stroke: var(--noir);
+    stroke-opacity: 0.6;
+    stroke-width: 1.6;
+    stroke-dasharray: 5 4;
+    stroke-linecap: round;
+  }
+
+  .coeur__visage {
+    fill: none;
+    stroke: var(--noir);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .coeur__meches {
+    fill: none;
+    stroke: var(--noir);
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+
+  /* Le cœur se colle d'un coup sec, puis bat à 140 BPM, le tempo de Tom */
+  :global(html.js) .merci__coeur svg {
+    opacity: 0;
+    transform: scale(0.3) rotate(-40deg);
+  }
+
+  :global(html.is-ready) .merci__coeur svg {
+    opacity: 1;
+    transform: rotate(-6deg);
+    transition:
+      opacity 0.3s 0.15s,
+      transform 0.8s var(--ease-back) 0.15s;
+    animation: battement calc(60s / 140) ease-in-out 1.1s infinite;
+  }
+
+  @keyframes battement {
+    0%,
+    60%,
+    100% {
+      scale: 1;
+    }
+    15% {
+      scale: 1.06;
+    }
+    30% {
+      scale: 0.99;
+    }
+    45% {
+      scale: 1.03;
+    }
+  }
+
+  /* --- Le reçu, sur papier crème comme le récap du panier --- */
+
+  .merci__ticket {
+    width: min(460px, 100%);
+    padding: 24px;
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
+    rotate: -1deg;
+  }
+
+  .merci__lignes {
+    display: grid;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .merci__lignes li,
+  .merci__total {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .merci__total {
+    margin-top: 14px;
+    padding-top: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    border-top: 2px dashed var(--noir);
+  }
+
+  .merci__note {
+    max-width: 46ch;
+    font-size: 13px;
+    color: var(--gris);
+  }
+
+  /* Mobile : le cœur, plus petit, se range à côté du titre */
+  @media (max-width: 700px) {
+    .merci--payee {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .merci--payee > * {
+      grid-column: 1 / -1;
+    }
+
+    .merci--payee .merci__titre {
+      grid-column: 1;
+    }
+
+    .merci__coeur {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: center;
+      width: clamp(84px, 26vw, 140px);
+      min-height: 0;
+      aspect-ratio: 200 / 220;
+    }
+  }
+</style>

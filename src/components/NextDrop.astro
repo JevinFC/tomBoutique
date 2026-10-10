@@ -56,7 +56,7 @@ const UNITES = [
       </div>
 
       <p class="next__info">{jour} · {heure} · {pieces} pièces · en ligne uniquement</p>
-      <button class="btn" type="button" style="--c: var(--jaune)" data-remind={`On te prévient le ${jour} à ${heure} (démo)`}>
+      <button class="btn" type="button" data-remind={`On te prévient le ${jour} à ${heure} (démo)`}>
         Me prévenir <Icon name="bolt" />
       </button>
     </div>
@@ -77,7 +77,7 @@ const UNITES = [
     </div>
   </div>
 
-  <Patch kind="skull" color="violet" size={96} x="44%" y="9%" rotate={-10} speed={0.12} />
+  <Patch kind="skull" color="blanc" size={96} x="44%" y="9%" mobileX="74%" mobileY="40px" rotate={-10} />
 </section>
 
 <script>
@@ -158,10 +158,9 @@ const UNITES = [
     aspect-ratio: 1;
     translate: 0 -50%;
     border-radius: 50%;
-    background: conic-gradient(var(--rose), var(--orange), var(--jaune), var(--acide), var(--cyan), var(--violet), var(--rose));
+    background: var(--accent);
     filter: blur(80px);
-    opacity: 0.32;
-    animation: spin 16s linear infinite;
+    opacity: 0.2;
   }
 
   .next__inner {
@@ -185,12 +184,11 @@ const UNITES = [
     text-transform: uppercase;
   }
 
+  /* Les noms de drops s'écrivent en gothique (classe .gothic) */
   .next__name {
     margin-top: 0.12em;
-    font-size: clamp(40px, 5.4vw, 92px);
-    color: var(--acide);
-    rotate: -3deg;
-    transform-origin: left;
+    font-size: clamp(44px, 5.6vw, 96px);
+    color: var(--accent);
   }
 
   .cd__units {
@@ -219,19 +217,7 @@ const UNITES = [
     color: var(--noir);
     background: var(--blanc);
     border: 3px solid var(--noir);
-    box-shadow: 6px 6px 0 var(--rose);
-  }
-
-  .cd__unit:nth-child(2) .cd__num {
-    box-shadow: 6px 6px 0 var(--cyan);
-  }
-
-  .cd__unit:nth-child(3) .cd__num {
-    box-shadow: 6px 6px 0 var(--jaune);
-  }
-
-  .cd__unit:nth-child(4) .cd__num {
-    box-shadow: 6px 6px 0 var(--acide);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
   }
 
   .cd__num:global(.tick) {
@@ -241,12 +227,12 @@ const UNITES = [
   @keyframes cd-tick {
     from {
       transform: translateY(-16%) skewX(-10deg);
-      background: var(--acide);
+      background: var(--accent);
     }
   }
 
   .cd__label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -260,7 +246,7 @@ const UNITES = [
     font-weight: 900;
     font-stretch: 70%;
     text-transform: uppercase;
-    color: var(--acide);
+    color: var(--accent);
   }
 
   .next:global(.is-live) .cd__units {
@@ -312,7 +298,8 @@ const UNITES = [
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: conic-gradient(var(--rose), var(--orange), var(--jaune), var(--acide), var(--cyan), var(--violet), var(--rose));
+    /* Étiquette rouge : seul le logo (les cheveux de Tom) reste multicolore */
+    background: var(--accent);
     box-shadow: 0 0 0 4px var(--noir);
   }
 
@@ -358,7 +345,7 @@ const UNITES = [
   }
 
   .tonearm__pin {
-    fill: var(--rose);
+    fill: var(--accent);
   }
 
   .tonearm__arm {

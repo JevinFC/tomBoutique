@@ -1,20 +1,13 @@
 ---
-// « Qui est Tom ? » : le texte s'allume mot à mot pendant le scroll,
-// et certains mots reçoivent un patch de couleur.
+// Le manifeste, adressé au visiteur : le texte s'allume mot à mot pendant le scroll,
+// et « lumineux. » reçoit un patch rouge. Tom n'apparaît que dans la signature.
 import Logo from './Logo.astro';
 import Patch from './Patch.astro';
 
-const TEXTE =
-  "Tom s'habille en noir pour les nuits techno, les sous-sols qui tremblent et le rap qui grince. Mais regarde ses cheveux : ici, le noir sert juste à faire péter la couleur. Des fringues sombres pour des gens lumineux.";
+const TEXTE = "Tu t'habilles en noir, mais t'as rien de sombre. Des fringues sombres pour des gens lumineux.";
 
-// Mots surlignés → couleur du patch
 const SURLIGNES: Record<string, string> = {
-  'techno,': 'var(--cyan)',
-  'sous-sols': 'var(--violet)',
-  rap: 'var(--rose)',
-  cheveux: 'var(--orange)',
-  'couleur.': 'var(--acide)',
-  'lumineux.': 'var(--jaune)',
+  'lumineux.': 'var(--accent)',
 };
 
 // La ponctuation haute (: ; ! ?) reste collée au mot précédent par une espace insécable
@@ -25,11 +18,11 @@ const mots = TEXTE.split(' ').map((mot, i) => ({
 }));
 ---
 
-<section class="tom" id="tom" aria-labelledby="tom-title">
+<section class="tom" id="manifeste" aria-labelledby="manifeste-title">
   <header class="shead">
     <span class="shead__idx">(02)</span>
-    <h2 class="shead__title" id="tom-title">Qui est <span class="gothic tom__name">Tom</span>&nbsp;?</h2>
-    <p class="shead__aside">Techno le jour, rap qui grince la nuit, et des cheveux de toutes les couleurs entre les deux.</p>
+    <h2 class="shead__title" id="manifeste-title">Pour les gens de <span class="tom__accent">la nuit</span></h2>
+    <p class="shead__aside">Techno, rap, afters&nbsp;: si tu te reconnais là-dedans, t'es au bon endroit.</p>
   </header>
 
   <p class="tom__text" data-manifesto>
@@ -42,11 +35,14 @@ const mots = TEXTE.split(' ').map((mot, i) => ({
 
   <div class="tom__sign" data-reveal>
     <Logo class="tom__logo" />
-    <p>— Tom, probablement en train de rire<br />(et d'écouter un truc qui fait peur)</p>
+    {/* « cheveux » garde les mèches de Tom : le seul arc-en-ciel de la section */}
+    <p>
+      — Tom, qui a lancé la boutique<br />(et qui a les <span class="tom__cheveux">cheveux</span> de toutes les couleurs)
+    </p>
   </div>
 
-  <Patch kind="star" color="jaune" size={86} x="90%" y="24%" rotate={-12} speed={0.2} />
-  <Patch kind="bolt" color="rose" size={64} x="2%" y="74%" rotate={18} speed={-0.1} desktopOnly />
+  {/* Le badge se colle à droite de la dernière ligne, au-dessus de la signature */}
+  <Patch kind="bpm" size={118} x="82%" y="72%" rotate={8} desktopOnly />
 </section>
 
 <script>
@@ -81,9 +77,8 @@ const mots = TEXTE.split(' ').map((mot, i) => ({
     padding: clamp(90px, 10vw, 150px) var(--gutter);
   }
 
-  .tom__name {
-    font-size: 0.86em;
-    color: var(--rose);
+  .tom__accent {
+    color: var(--accent);
   }
 
   .tom__text {
@@ -148,5 +143,12 @@ const mots = TEXTE.split(' ').map((mot, i) => ({
 
   .tom__sign:hover :global(.tom__logo) {
     rotate: 350deg;
+  }
+
+  .tom__cheveux {
+    padding: 0 0.3em;
+    font-weight: 700;
+    color: var(--noir);
+    background: var(--cheveux);
   }
 </style>

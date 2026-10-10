@@ -3,32 +3,32 @@
 // pendant le scroll ; sur mobile c'est un carrousel qu'on fait glisser au doigt.
 import Garment from './Garment.astro';
 import Icon from './Icon.astro';
-import type { Categorie, Couleur } from '../data/catalogue';
+import type { Categorie } from '../data/catalogue';
 
 // Placeholders à remplacer par les photos du shooting
-const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: number }[] = [
-  { legende: 'Hoodie Fantôme, 5 h du mat', couleur: 'rose', type: 'hoodie', rotation: -3 },
-  { legende: 'Tee 140 BPM, devant les enceintes', couleur: 'acide', type: 'tshirt', rotation: 2 },
-  { legende: 'Casquette Acide, sous la pluie', couleur: 'jaune', type: 'casquette', rotation: -1.5 },
-  { legende: 'Longsleeve Limbo, fin de set', couleur: 'violet', type: 'longsleeve', rotation: 3 },
-  { legende: 'Cargo Nuit blanche, au vestiaire', couleur: 'cyan', type: 'pantalon', rotation: -2.5 },
-  { legende: 'Tote Sous-sol, retour en night bus', couleur: 'orange', type: 'sac', rotation: 1.5 },
+const LOOKS: { legende: string; type: Categorie; rotation: number }[] = [
+  { legende: 'Hoodie Fantôme, 5 h du mat', type: 'hoodie', rotation: -3 },
+  { legende: 'Tee 140 BPM, devant les enceintes', type: 'tshirt', rotation: 2 },
+  { legende: 'Casquette Acide, sous la pluie', type: 'casquette', rotation: -1.5 },
+  { legende: 'Longsleeve Limbo, fin de set', type: 'longsleeve', rotation: 3 },
+  { legende: 'Cargo Nuit blanche, au vestiaire', type: 'pantalon', rotation: -2.5 },
+  { legende: 'Tote Sous-sol, retour en night bus', type: 'sac', rotation: 1.5 },
 ];
 ---
 
 <section class="lb" id="lookbook" data-lookbook aria-labelledby="lb-title">
   <div class="lb__sticky">
     <header class="lb__head">
-      <span class="shead__idx">(04)</span>
-      <h2 class="lb__title" id="lb-title">Lookbook <span class="gothic">hiver 26</span></h2>
-      <p class="lb__hint">Shooting à venir. En attendant : des placeholders qui ont du style.</p>
+      <span class="shead__idx">(03)</span>
+      <h2 class="lb__title" id="lb-title">Lookbook <span class="lb__season">Hiver 26</span></h2>
+      <p class="lb__hint">Shooting à venir. En attendant&nbsp;: des placeholders qui ont du style.</p>
     </header>
 
     <div class="lb__viewport">
       <div class="lb__track" data-lb-track>
         {
           LOOKS.map((look, i) => (
-            <figure class="look" style={`--c: var(--${look.couleur}); --rot: ${look.rotation}deg`}>
+            <figure class="look" style={`--rot: ${look.rotation}deg`}>
               <span class="look__tape" aria-hidden="true" />
               <div class="look__img">
                 <Garment type={look.type} class="look__garment" />
@@ -118,9 +118,9 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     text-transform: uppercase;
   }
 
-  .lb__title .gothic {
+  .lb__season {
     font-size: 0.5em;
-    color: var(--cyan);
+    color: var(--accent);
     white-space: nowrap;
   }
 
@@ -169,7 +169,7 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     height: 28px;
     translate: -50% 0;
     rotate: -4deg;
-    background: color-mix(in srgb, var(--c) 85%, transparent);
+    background: color-mix(in srgb, var(--accent) 85%, transparent);
     box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
   }
 
@@ -178,7 +178,7 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     position: relative;
     aspect-ratio: 3 / 4;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 35%, #3b3b42, #0d0d0f 72%);
+    background: var(--photo-flash);
     border: 10px solid var(--blanc);
     filter: grayscale(1) contrast(1.1);
     transition: filter 0.5s;
@@ -188,7 +188,7 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--c);
+    background: var(--accent);
     opacity: 0;
     transition: opacity 0.4s;
   }
@@ -198,7 +198,7 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(rgb(255 255 255 / 0.12) 1px, transparent 1.6px) 0 0 / 5px 5px;
+    background: var(--photo-trame);
   }
 
   .look__img :global(.look__garment) {
@@ -227,18 +227,18 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     top: 12px;
     right: 12px;
     z-index: 1;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--gris);
   }
 
+  /* Légendes en casse normale (les capitales restent pour les titres et les boutons) */
   .look figcaption {
     margin-top: 14px;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--gris);
   }
 
@@ -260,9 +260,9 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
     line-height: 0.9;
     text-transform: uppercase;
     color: var(--noir);
-    background: var(--acide);
+    background: var(--accent);
     border: 3px solid var(--noir);
-    box-shadow: 10px 10px 0 var(--rose);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--blanc);
     --rot: 2deg;
   }
 
@@ -324,7 +324,7 @@ const LOOKS: { legende: string; couleur: Couleur; type: Categorie; rotation: num
   .lb__progress span {
     position: absolute;
     inset: 0;
-    background: var(--arc);
+    background: var(--accent);
     transform: scaleX(0);
     transform-origin: left;
   }

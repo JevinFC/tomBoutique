@@ -1,9 +1,9 @@
 ---
-// Grille du drop en cours : la première pièce est en grand, les autres suivent.
+// Grille du drop en cours : toutes les pièces au même format, sur le même fond photo.
+// Les filtres par rayon (au-dessus) remplacent l'ancienne section « Rayons ».
 import type { CollectionEntry } from 'astro:content';
-import Icon from './Icon.astro';
-import Patch from './Patch.astro';
 import ProductCard from './ProductCard.astro';
+import { RAYONS } from '../data/catalogue';
 import { site } from '../data/site';
 
 interface Props {
@@ -11,50 +11,67 @@ interface Props {
 }
 
 const grille = Astro.props.produits.slice(0, 6);
-const prochainDrop = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
-  .format(new Date(site.prochainDrop.date))
-  .replace('/', '.');
+const rayonDe = (produit: CollectionEntry<'produits'>) =>
+  RAYONS.find((rayon) => rayon.categories.includes(produit.data.categorie))?.nom ?? '';
+// Un filtre par rayon présent dans le drop
+const filtres = RAYONS.map((rayon) => ({
+  nom: rayon.nom,
+  total: grille.filter((produit) => rayonDe(produit) === rayon.nom).length,
+})).filter((filtre) => filtre.total > 0);
 ---
 
 <section class="drop" id="drop" aria-labelledby="drop-title">
   <header class="shead">
     <span class="shead__idx">(01)</span>
-    <h2 class="shead__title" id="drop-title">Drop <span class="drop__num gothic">{site.drop.numero}</span></h2>
+    <h2 class="shead__title" id="drop-title">
+      Drop {site.drop.numero} <span class="drop__nom gothic">{site.drop.nom}</span>
+    </h2>
     <p class="shead__aside">
-      « {site.drop.nom} » — {grille.length} pièces sorties du sous-sol. Coton épais, prints fluo. Quand c'est parti, c'est
-      parti.
+      {grille.length} pièces en série limitée. Coton épais, prints fluo. Pas de restock&nbsp;: quand c'est parti, c'est parti.
     </p>
   </header>
 
-  <div class="drop__grid">
+  <div class="filtres" role="group" aria-label="Filtrer par rayon" data-filtres>
+    <button class="filtre" type="button" data-filtre="" aria-pressed="true">Tout <span>{grille.length}</span></button>
+    {
+      filtres.map(({ nom, total }) => (
+        <button class="filtre" type="button" data-filtre={nom} aria-pressed="false">
+          {nom} <span>{total}</span>
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="drop__grid" data-grille>
     {
       grille.map((produit, i) => (
-        <div class="drop__cell" data-reveal style={`--d: ${(i % 3) * 90}`}>
-          <ProductCard produit={produit} featured={i === 0} />
+        <div class="drop__cell" data-reveal data-rayon={rayonDe(produit)} style={`--d: ${(i % 3) * 90}`}>
+          <ProductCard produit={produit} />
         </div>
       ))
     }
-    <a class="drop__next" href="#prochain-drop" data-reveal style="--d: 180">
-      <span class="drop__next-kicker">Prochain drop</span>
-      <span class="drop__next-date">{prochainDrop}</span>
-      <span class="drop__next-name gothic">{site.prochainDrop.nom}</span>
-      <Icon name="arrow" />
-    </a>
   </div>
-
-  <Patch kind="heart" color="violet" size={92} x="88%" y="40px" rotate={14} speed={0.1} />
-  {/* Collé sur le coin bas-droit de la photo de la pièce phare (grand écran) */}
-  <Patch kind="tom" color="acide" size={128} x="50%" y="35.7%" rotate={-10} desktopOnly />
 </section>
 
 <script>
-  import { addToCart } from '../scripts/fun';
+  // Les boutons « Ajouter » des cartes sont gérés pour tout le site (src/scripts/panier.ts).
+  // Filtres par rayon : les pièces des autres rayons sont masquées
+  const filtres = document.querySelector<HTMLElement>('[data-filtres]');
+  const grille = document.querySelector<HTMLElement>('[data-grille]');
 
-  document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const rect = button.getBoundingClientRect();
-      addToCart(button.dataset.add ?? 'Article', { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  filtres?.addEventListener('click', (e) => {
+    const bouton = (e.target as Element).closest<HTMLButtonElement>('[data-filtre]');
+    if (!bouton || !grille) return;
+    const filtre = bouton.dataset.filtre ?? '';
+    filtres.querySelectorAll('[data-filtre]').forEach((b) => b.setAttribute('aria-pressed', String(b === bouton)));
+    [...grille.children].forEach((cellule) => {
+      const element = cellule as HTMLElement;
+      element.hidden = filtre !== '' && element.dataset.rayon !== filtre;
     });
+    // Relance la petite animation d'arrivée des pièces affichées
+    grille.classList.remove('is-filtered');
+    void grille.offsetWidth;
+    grille.classList.add('is-filtered');
   });
 </script>
 
@@ -64,11 +81,61 @@ const prochainDrop = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '
     padding: clamp(90px, 10vw, 150px) var(--gutter) clamp(80px, 9vw, 140px);
   }
 
-  .drop__num {
+  /* Le nom du drop en gothique rouge, collé de travers après le numéro */
+  .drop__nom {
+    display: inline-block;
     margin-left: 0.04em;
-    font-size: 0.7em;
-    color: var(--rose);
+    font-size: 0.42em;
+    line-height: 1;
+    color: var(--accent);
+    rotate: -6deg;
   }
+
+  /* --- Filtres par rayon --- */
+
+  .filtres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: clamp(28px, 3.4vw, 48px);
+  }
+
+  .filtre {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 2px solid var(--ligne);
+    transition:
+      color 0.2s,
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+
+  .filtre span {
+    font-size: 12px;
+    color: var(--gris);
+  }
+
+  .filtre:hover {
+    border-color: var(--blanc);
+  }
+
+  .filtre[aria-pressed='true'] {
+    color: var(--noir);
+    background: var(--blanc);
+    border-color: var(--blanc);
+  }
+
+  .filtre[aria-pressed='true'] span {
+    color: var(--noir);
+  }
+
+  /* --- Grille --- */
 
   .drop__grid {
     display: grid;
@@ -76,71 +143,18 @@ const prochainDrop = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '
     gap: clamp(32px, 3.4vw, 52px) clamp(16px, 2vw, 30px);
   }
 
-  /* La pièce phare prend toute la largeur, les autres suivent en grille */
-  .drop__cell:first-child {
-    grid-column: 1 / -1;
-    margin-bottom: clamp(8px, 2vw, 32px);
+  .drop__grid > [hidden] {
+    display: none;
   }
 
-  /* Case « prochain drop » : complète la dernière rangée */
-  .drop__next {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 260px;
-    padding: 22px;
-    border: 2px dashed var(--blanc);
-    transition:
-      color 0.3s,
-      background-color 0.3s,
-      border-color 0.3s;
+  .drop__grid:global(.is-filtered) > * {
+    animation: drop-in 0.5s var(--ease-back);
   }
 
-  .drop__next-kicker {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--gris);
-  }
-
-  .drop__next-date {
-    font-family: var(--f-display);
-    font-size: clamp(64px, 8vw, 130px);
-    font-weight: 900;
-    font-stretch: 60%;
-    line-height: 0.8;
-  }
-
-  .drop__next-name {
-    font-size: clamp(28px, 3vw, 46px);
-    line-height: 1;
-    color: var(--acide);
-  }
-
-  .drop__next :global(.icon) {
-    align-self: flex-end;
-    font-size: 40px;
-    color: var(--acide);
-    transition: transform 0.4s var(--ease-back);
-  }
-
-  @media (hover: hover) {
-    .drop__next:hover {
-      color: var(--noir);
-      background: var(--acide);
-      border-color: var(--acide);
-    }
-
-    .drop__next:hover .drop__next-kicker,
-    .drop__next:hover .drop__next-name,
-    .drop__next:hover :global(.icon) {
-      color: var(--noir);
-    }
-
-    .drop__next:hover :global(.icon) {
-      transform: rotate(-45deg);
+  @keyframes drop-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.97);
     }
   }
 

@@ -1,12 +1,18 @@
 ---
-// Pied de page : liens, et le nom en géant dont chaque lettre saute au survol.
+// Pied de page : liens, et le nom en géant (comme le logo de l'en-tête : « TOM » en capitales,
+// « Boutique » en gothique rouge) dont chaque lettre saute au survol.
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
 import { RAYONS } from '../data/catalogue';
 import { site } from '../data/site';
 
-const LETTRES = [...site.nom.toUpperCase()];
-const COULEURS = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
+// Premier mot en capitales, la suite en gothique ; i = rang de la lettre (apparition en cascade)
+const [prenom, ...suite] = site.nom.split(' ');
+let rang = 0;
+const MOTS = [
+  { gothique: false, texte: prenom.toUpperCase() },
+  { gothique: true, texte: suite.join(' ') },
+].map(({ gothique, texte }) => ({ gothique, lettres: [...texte].map((lettre) => ({ lettre, i: rang++ })) }));
 const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
 ---
 
@@ -22,7 +28,7 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
         {
           RAYONS.map((rayon) => (
             <li>
-              <a href="#drop">{rayon.nom}</a>
+              <a href="/#drop">{rayon.nom}</a>
             </li>
           ))
         }
@@ -58,15 +64,15 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
     <span class="sr-only">{site.nom}</span>
     <span class="ftr__giant-row" aria-hidden="true">
       {
-        LETTRES.map((lettre, i) =>
-          lettre === ' ' ? (
-            <span class="ftr__space" />
-          ) : (
-            <span class="ftr__letter" style={`--c: var(--${COULEURS[i % COULEURS.length]}); --i: ${i}`}>
-              {lettre}
-            </span>
-          ),
-        )
+        MOTS.map(({ gothique, lettres }) => (
+          <span class:list={['ftr__word', gothique && 'ftr__word--gothic gothic']}>
+            {lettres.map(({ lettre, i }) => (
+              <span class="ftr__letter" style={`--i: ${i}`}>
+                {lettre}
+              </span>
+            ))}
+          </span>
+        ))
       }
     </span>
   </p>
@@ -119,7 +125,7 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
     font-size: 15px;
     font-weight: 700;
     text-transform: uppercase;
-    background: linear-gradient(var(--acide), var(--acide)) 0 100% / 0 3px no-repeat;
+    background: linear-gradient(var(--accent), var(--accent)) 0 100% / 0 3px no-repeat;
     transition: background-size 0.35s var(--ease-out);
   }
 
@@ -134,18 +140,26 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
   .ftr__giant-row {
     display: flex;
     justify-content: center;
+    align-items: baseline;
     font-family: var(--f-display);
-    font-size: 23.5vw;
+    font-size: 21vw;
     font-weight: 900;
     font-stretch: 50%;
     line-height: 0.78;
     letter-spacing: -0.01em;
-    text-transform: uppercase;
     white-space: nowrap;
   }
 
-  .ftr__space {
-    width: 0.12em;
+  .ftr__word {
+    display: flex;
+  }
+
+  /* « Boutique » en gothique rouge, à peu près à la hauteur de capitale de « TOM » */
+  .ftr__word--gothic {
+    margin-left: 0.1em;
+    font-size: 0.9em;
+    line-height: 1;
+    color: var(--accent);
   }
 
   .ftr__letter {
@@ -158,8 +172,12 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
   }
 
   .ftr__letter:hover {
-    color: var(--c);
+    color: var(--accent);
     transform: translateY(-10%) rotate(-6deg);
+  }
+
+  .ftr__word--gothic .ftr__letter:hover {
+    color: var(--blanc);
   }
 
   :global(html.js) .ftr__letter {
@@ -173,7 +191,11 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
     translate: 0 0;
   }
 
+  /* Au-dessus du nom géant : la police gothique déborde bien sous ses lettres et couvrait
+     « Retour en haut » (seule la flèche restait cliquable) */
   .ftr__bottom {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;

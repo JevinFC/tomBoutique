@@ -1,11 +1,11 @@
 ---
 // Patchs brodés décoratifs : ils flottent, glissent au scroll (parallaxe),
 // se déplacent à la souris et font une pirouette au clic.
-import type { Couleur } from '../data/catalogue';
-
 interface Props {
   kind: 'star' | 'smiley' | 'bolt' | 'heart' | 'skull' | 'bpm' | 'tom';
-  color?: Couleur;
+  /** Rouge (par défaut) ou crème */
+  color?: 'accent' | 'blanc';
+  class?: string;
   /** Largeur en px (réduite automatiquement sur mobile) */
   size?: number;
   /** Position dans la section parente, ex. '8%' ou '120px' */
@@ -25,7 +25,8 @@ interface Props {
 
 const {
   kind,
-  color = 'rose',
+  color = 'accent',
+  class: className,
   size = 96,
   x,
   y,
@@ -47,7 +48,7 @@ const MINI_HEART =
 ---
 
 <div
-  class:list={['patch', { 'patch--desktop': desktopOnly }]}
+  class:list={['patch', className, { 'patch--desktop': desktopOnly }]}
   style={`--x: ${x}; --y: ${y}; --xm: ${mobileX}; --ym: ${mobileY}; --s: ${size}px; --r: ${rotate}deg; --c: var(--${color}); --delay: ${delay}ms`}
   data-pop
   aria-hidden="true"
@@ -177,8 +178,6 @@ const MINI_HEART =
 
   .patch__body {
     rotate: var(--r);
-    animation: patch-float 7s ease-in-out infinite alternate;
-    animation-delay: calc(var(--delay) * -4);
     transition: scale 0.35s var(--ease-back);
   }
 
@@ -189,15 +188,6 @@ const MINI_HEART =
   @media (hover: hover) {
     .patch__drag:hover .patch__body {
       scale: 1.12;
-    }
-  }
-
-  @keyframes patch-float {
-    from {
-      transform: translateY(-5px) rotate(-4deg);
-    }
-    to {
-      transform: translateY(6px) rotate(5deg);
     }
   }
 

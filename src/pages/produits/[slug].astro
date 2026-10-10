@@ -1,0 +1,469 @@
+---
+// Fiche produit : grande photo (ou silhouette placeholder) au flash, choix de la taille et ajout
+// au panier. Une page par fiche de src/content/produits, générée au build.
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Annonce from '../../components/Annonce.astro';
+import Footer from '../../components/Footer.astro';
+import Garment from '../../components/Garment.astro';
+import Header from '../../components/Header.astro';
+import Icon from '../../components/Icon.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { formatPrix } from '../../data/catalogue';
+import { site } from '../../data/site';
+
+export async function getStaticPaths() {
+  const produits = (await getCollection('produits')).sort((a, b) => a.data.ordre - b.data.ordre);
+  return produits.map((produit) => ({
+    params: { slug: produit.id },
+    // « Dans le même drop » : les pièces à la une, sans celle de la page
+    props: { produit, autres: produits.filter((autre) => autre.id !== produit.id && autre.data.alaune).slice(0, 3) },
+  }));
+}
+
+interface Props {
+  produit: CollectionEntry<'produits'>;
+  autres: CollectionEntry<'produits'>[];
+}
+
+const { produit, autres } = Astro.props;
+const { nom, prix, categorie, badge, tailles, photo, epuise } = produit.data;
+const description = produit.body?.trim() ?? '';
+const tailleUnique = tailles.length === 1;
+---
+
+<Base title={`${nom} — ${site.nom}`} description={description || site.description}>
+  <Annonce />
+  <Header />
+
+  <main id="contenu" class="fiche">
+    <a class="fiche__retour" href="/#drop">
+      <Icon name="arrow" class="fiche__retour-icon" />
+      Drop {site.drop.numero} <span class="gothic">{site.drop.nom}</span>
+    </a>
+
+    <div class="fiche__grid">
+      <div class:list={['fiche__media', { 'fiche__media--soldout': epuise }]}>
+        <div class="fiche__bg"></div>
+        {
+          photo ? (
+            <Image
+              class="fiche__photo"
+              src={photo}
+              alt={nom}
+              widths={[640, 1280]}
+              sizes="(max-width: 860px) 100vw, 55vw"
+            />
+          ) : (
+            <Fragment>
+              <Garment type={categorie} class="fiche__garment" />
+              <span class="fiche__placeholder">[ photo à venir ]</span>
+            </Fragment>
+          )
+        }
+        {badge && <span class="fiche__badge">{badge}</span>}
+        {
+          epuise && (
+            <div class="fiche__soldout" aria-hidden="true">
+              Sold out · Sold out · Sold out · Sold out
+            </div>
+          )
+        }
+      </div>
+
+      <div class="fiche__infos">
+        <h1 class="fiche__nom">{nom}</h1>
+        <p class="fiche__prix">{formatPrix(prix)}</p>
+        {description && <p class="fiche__desc">{description}</p>}
+
+        <form class="fiche__form" data-fiche data-id={produit.id} data-nom={nom} novalidate>
+          <fieldset class="tailles" disabled={epuise}>
+            <legend>Taille</legend>
+            <div class="tailles__liste">
+              {
+                tailles.map((taille) => (
+                  <label class="taille">
+                    <input type="radio" name="taille" value={taille} checked={tailleUnique} />
+                    <span>{taille}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          {
+            epuise ? (
+              <p class="fiche__epuise">
+                Épuisé. <a href="/#liste">Rejoins la liste</a> pour ne pas rater le prochain drop.
+              </p>
+            ) : (
+              <button class="btn" type="submit" data-cursor="+1">
+                Ajouter au panier <Icon name="arrow" />
+              </button>
+            )
+          }
+          <p class="fiche__msg" data-msg role="status"></p>
+          <a class="btn btn--ghost" href="/panier" data-voir hidden>Voir le panier <Icon name="arrow" /></a>
+        </form>
+
+        <ul class="fiche__plus">
+          <li>Livraison offerte dès {site.livraison.offerteDes} €, sinon {formatPrix(site.livraison.prix)}</li>
+          <li>Retours sous 30 jours</li>
+          <li>Paiement sécurisé par Stripe (mode test&nbsp;: aucun vrai débit)</li>
+        </ul>
+      </div>
+    </div>
+
+    {
+      autres.length > 0 && (
+        <section class="fiche__autres" aria-labelledby="autres-titre">
+          <header class="shead">
+            <span class="shead__idx">(+)</span>
+            <h2 class="shead__title" id="autres-titre">
+              Dans le même <span class="fiche__accent">drop</span>
+            </h2>
+          </header>
+          <div class="fiche__autres-grille">
+            {autres.map((autre) => <ProductCard produit={autre} />)}
+          </div>
+        </section>
+      )
+    }
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  import { ajouterAvecFete } from '../../scripts/panier';
+
+  const form = document.querySelector<HTMLFormElement>('[data-fiche]');
+  const message = form?.querySelector<HTMLElement>('[data-msg]');
+  const voir = form?.querySelector<HTMLElement>('[data-voir]');
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!message) return;
+    const choix = form.querySelector<HTMLInputElement>('input[name="taille"]:checked');
+    if (!choix) {
+      message.textContent = "Choisis ta taille d'abord.";
+      message.dataset.etat = 'erreur';
+      form.querySelector<HTMLInputElement>('input[name="taille"]')?.focus();
+      return;
+    }
+    ajouterAvecFete(form.dataset.id ?? '', choix.value, form.dataset.nom ?? 'Article', form.querySelector('[type="submit"]'));
+    message.textContent = "C'est dans le panier.";
+    message.dataset.etat = 'ok';
+    if (voir) voir.hidden = false;
+  });
+
+  // Choisir une taille efface le message d'erreur
+  form?.addEventListener('change', () => {
+    if (message?.dataset.etat !== 'erreur') return;
+    message.textContent = '';
+    delete message.dataset.etat;
+  });
+</script>
+
+<style>
+  .fiche {
+    padding: clamp(28px, 4vw, 56px) var(--gutter) clamp(90px, 10vw, 150px);
+  }
+
+  .fiche__retour {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: clamp(20px, 3vw, 36px);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gris);
+    transition: color 0.2s;
+  }
+
+  .fiche__retour:hover {
+    color: var(--blanc);
+  }
+
+  .fiche__retour :global(.fiche__retour-icon) {
+    rotate: 180deg;
+  }
+
+  .fiche__retour .gothic {
+    font-size: 1.6em;
+    color: var(--accent);
+  }
+
+  .fiche__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(28px, 5vw, 80px);
+  }
+
+  /* --- La photo (même direction que les cartes : fond noir, flash, trame) --- */
+
+  .fiche__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: 2px solid var(--blanc);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
+  }
+
+  .fiche__bg {
+    position: absolute;
+    inset: 0;
+    background: var(--photo-trame), var(--photo-flash);
+  }
+
+  .fiche__media--soldout .fiche__bg {
+    filter: grayscale(1) brightness(0.55);
+  }
+
+  .fiche__media :global(.fiche__garment) {
+    position: absolute;
+    inset: 9% 10% 7%;
+    width: 80%;
+    height: 84%;
+  }
+
+  .fiche__media :global(.fiche__photo) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .fiche__placeholder {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .fiche__badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--noir);
+    background: var(--accent);
+    border: 2px solid var(--noir);
+    rotate: 5deg;
+  }
+
+  .fiche__soldout {
+    position: absolute;
+    top: 46%;
+    left: -20%;
+    width: 140%;
+    padding: 12px 0;
+    font-family: var(--f-display);
+    font-size: clamp(28px, 3.4vw, 48px);
+    font-weight: 900;
+    font-stretch: 70%;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--noir);
+    background: var(--blanc);
+    border-block: 3px solid var(--noir);
+    rotate: -14deg;
+  }
+
+  /* --- Les infos --- */
+
+  .fiche__infos {
+    display: grid;
+    justify-items: start;
+    gap: 22px;
+  }
+
+  .fiche__nom {
+    font-family: var(--f-display);
+    font-size: clamp(52px, 6.6vw, 116px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.84;
+    text-transform: uppercase;
+  }
+
+  .fiche__prix {
+    padding: 6px 14px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--noir);
+    background: var(--accent);
+    rotate: -3deg;
+  }
+
+  .fiche__desc {
+    max-width: 46ch;
+    font-size: 15px;
+    line-height: 1.65;
+    color: color-mix(in srgb, var(--blanc) 82%, transparent);
+  }
+
+  .fiche__form {
+    display: grid;
+    justify-items: start;
+    gap: 18px;
+  }
+
+  .tailles {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .tailles legend {
+    margin-bottom: 12px;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gris);
+  }
+
+  .tailles__liste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Le bouton radio reste là (clavier, lecteurs d'écran), c'est son étiquette qui se voit */
+  .taille {
+    position: relative;
+  }
+
+  .taille input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .taille span {
+    display: grid;
+    place-items: center;
+    min-width: 52px;
+    height: 48px;
+    padding: 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid var(--ligne);
+    transition:
+      color 0.2s,
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+
+  .taille:hover span {
+    border-color: var(--blanc);
+  }
+
+  .taille input:checked + span {
+    color: var(--noir);
+    background: var(--blanc);
+    border-color: var(--blanc);
+  }
+
+  .taille input:focus-visible + span {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .tailles:disabled .taille span {
+    opacity: 0.45;
+  }
+
+  .fiche__epuise {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gris);
+  }
+
+  .fiche__epuise a {
+    color: var(--blanc);
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 4px;
+  }
+
+  .fiche__msg {
+    min-height: 1.5em;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .fiche__msg[data-etat='erreur'] {
+    color: var(--accent);
+  }
+
+  .fiche__plus {
+    display: grid;
+    justify-self: stretch;
+    gap: 8px;
+    padding-top: 22px;
+    font-size: 13px;
+    color: var(--gris);
+    border-top: 2px solid var(--ligne);
+  }
+
+  .fiche__plus li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .fiche__plus li::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+  }
+
+  /* --- Dans le même drop --- */
+
+  .fiche__autres {
+    margin-top: clamp(90px, 10vw, 150px);
+  }
+
+  .fiche__accent {
+    color: var(--accent);
+  }
+
+  .fiche__autres-grille {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(32px, 3.4vw, 52px) clamp(16px, 2vw, 30px);
+  }
+
+  @media (max-width: 1000px) {
+    .fiche__autres-grille {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    .fiche__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

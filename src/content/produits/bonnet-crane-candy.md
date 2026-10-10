@@ -2,7 +2,6 @@
 nom: Bonnet Crâne candy
 prix: 25
 categorie: bonnet
-couleur: orange
 tailles: [Unique]
 epuise: true
 ordre: 6

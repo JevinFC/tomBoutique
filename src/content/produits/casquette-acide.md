@@ -2,7 +2,6 @@
 nom: Casquette Acide
 prix: 32
 categorie: casquette
-couleur: jaune
 badge: Nouveau
 tailles: [Unique]
 ordre: 4

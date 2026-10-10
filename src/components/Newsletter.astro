@@ -3,21 +3,28 @@
 import Patch from './Patch.astro';
 ---
 
-<section class="nl" aria-labelledby="nl-title">
+<section class="nl" id="liste" aria-labelledby="nl-title">
   <div class="nl__box" data-reveal>
-    <p class="kicker">(05) La liste</p>
-    <h2 class="nl__title" id="nl-title">Rejoins <span class="gothic">la liste</span></h2>
-    <p class="nl__text">Les drops 24 h avant tout le monde, les soirées, et zéro spam. Juré sur la tête de Tom.</p>
+    <p class="kicker">(04) La liste</p>
+    <h2 class="nl__title" id="nl-title">Rejoins <span class="nl__accent">la liste</span></h2>
+    <p class="nl__text">Les drops 24 h avant tout le monde, les invits aux soirées, et zéro spam.</p>
     <form class="nl__form" data-newsletter novalidate>
       <label class="sr-only" for="nl-email">Ton adresse e-mail</label>
       <input id="nl-email" name="email" type="email" placeholder="ton@email.fr" autocomplete="email" required />
-      <button class="btn" type="submit" style="--c: var(--rose)">Je rentre</button>
+      <button class="btn" type="submit">Je rentre</button>
     </form>
     <p class="nl__msg" data-newsletter-msg role="status"></p>
   </div>
 
-  <Patch kind="smiley" color="cyan" size={104} x="5%" y="12%" rotate={12} speed={0.15} desktopOnly />
-  <Patch kind="heart" color="rose" size={80} x="88%" y="62%" rotate={-12} speed={-0.1} />
+  {/* Collé sur le coin haut droit de la carte (centrée, 980 px max), loin du texte */}
+  <Patch
+    kind="smiley"
+    size={104}
+    x="calc(min(100% - var(--gutter), 50% + 490px) - 84px)"
+    y="calc(clamp(90px, 10vw, 150px) - 52px)"
+    rotate={12}
+    desktopOnly
+  />
 </section>
 
 <script>
@@ -61,9 +68,7 @@ import Patch from './Patch.astro';
     color: var(--noir);
     background: var(--blanc);
     border: 3px solid var(--noir);
-    box-shadow:
-      14px 14px 0 var(--rose),
-      28px 28px 0 var(--cyan);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
     rotate: -1deg;
   }
 
@@ -77,9 +82,8 @@ import Patch from './Patch.astro';
     text-transform: uppercase;
   }
 
-  .nl__title .gothic {
-    font-size: 0.66em;
-    color: var(--rose);
+  .nl__accent {
+    color: var(--accent);
   }
 
   .nl__text {
@@ -113,16 +117,17 @@ import Patch from './Patch.astro';
   .nl__form input:focus-visible {
     outline: 3px solid var(--noir);
     outline-offset: 2px;
-    box-shadow: 6px 6px 0 var(--acide);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
   }
 
+  /* Sur le papier crème, l'ombre du bouton rouge passe en noir */
   .nl__form .btn {
-    box-shadow: 5px 5px 0 var(--noir);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--noir);
   }
 
   @media (hover: hover) {
     .nl__form .btn:hover {
-      box-shadow: 9px 9px 0 var(--noir);
+      box-shadow: calc(var(--ombre) + 3px) calc(var(--ombre) + 3px) 0 var(--noir);
     }
   }
 
@@ -131,11 +136,17 @@ import Patch from './Patch.astro';
     margin-top: 18px;
     font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
   }
 
   .nl__msg[data-state='error'] {
     color: #c4002f;
+  }
+
+  /* Mobile : la carte se redresse et garde la place de son ombre */
+  @media (max-width: 700px) {
+    .nl__box {
+      margin-right: var(--ombre);
+      rotate: 0deg;
+    }
   }
 </style>

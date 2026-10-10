@@ -2,7 +2,6 @@
 nom: Hoodie Fantôme
 prix: 75
 categorie: hoodie
-couleur: rose
 badge: Nouveau
 ordre: 1
 ---

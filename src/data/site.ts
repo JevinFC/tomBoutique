@@ -1,11 +1,19 @@
-// Réglages généraux : textes des bandes défilantes, drop en cours, prochain drop, réseaux.
+// Réglages généraux : textes des bandes défilantes, drop en cours, prochain drop, livraison, réseaux.
 // Tout ce qui est ici se modifie sans toucher au reste du code.
+
+/** Livraison (en euros) : bandeau du haut, panier et paiement */
+const livraison = {
+  /** Offerte à partir de ce montant d'achat */
+  offerteDes: 80,
+  /** Prix en dessous */
+  prix: 5.9,
+};
 
 export const site = {
   nom: 'Tom Boutique',
   slogan: 'Noir dehors. Fluo dedans.',
   description:
-    'Des fringues noires pour les nuits techno, les sous-sols qui tremblent et le rap qui grince. La couleur, elle, est dans la tête — et sur les cheveux de Tom.',
+    "Des fringues noires pour les nuits techno et les concerts de rap. Pour celles et ceux qui s'habillent sombre, mais n'ont rien de sombre.",
 
   /** Drop en cours (grille de produits) */
   drop: {
@@ -22,15 +30,15 @@ export const site = {
     pieces: 7,
   },
 
-  /** Textes des bandes colorées qui traversent la page */
+  livraison,
+
+  /** Bandeau fixe tout en haut (sur mobile, seule la première info s'affiche) */
+  annonce: [`Livraison offerte dès ${livraison.offerteDes} €`, 'Drop 001 dispo', 'Retours 30 jours'],
+
+  /** Textes des deux bandes qui traversent la page */
   bandes: {
-    annonce: ['Livraison offerte dès 80 €', 'Drop 001 dispo', 'Retours 30 jours', 'Stock limité'],
-    heroA: ['Nouveau drop', 'Hiver 26', 'Stock limité', 'Pas de restock (peut-être)'],
-    heroB: ['Noir dehors', 'Fluo dedans', '140 BPM', 'Fait pour les afters'],
-    drop: ['Cousu pour danser', 'Coton épais', 'Prints fluo', 'Livraison offerte dès 80 €'],
-    flyerA: ['Drop 002', '31.10', 'Cimetière disco', 'Mets ton réveil'],
-    flyerB: ['Techno', 'Rap qui grince', 'Couleurs', 'Sous-sol'],
-    liste: ['Rejoins la liste', 'Zéro spam', 'Drops en avant-première', 'Juré'],
+    hero: ['Nouveau drop', 'Hiver 26', 'Stock limité', 'Pas de restock'],
+    prochainDrop: ['Drop 002', '31.10', 'Cimetière disco', 'Mets ton réveil'],
   },
 
   reseaux: [

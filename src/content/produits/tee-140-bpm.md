@@ -2,7 +2,6 @@
 nom: Tee 140 BPM
 prix: 35
 categorie: tshirt
-couleur: acide
 badge: Best-seller
 ordre: 2
 ---

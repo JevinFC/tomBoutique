@@ -2,7 +2,6 @@
 nom: Tote Sous-sol
 prix: 22
 categorie: sac
-couleur: rose
 tailles: [Unique]
 alaune: false
 ordre: 7

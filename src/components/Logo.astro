@@ -18,9 +18,8 @@ const uid = `logo-${Math.random().toString(36).slice(2, 8)}`;
 
 const HAIR =
   'M20 62L13 40 24 45 20 21 33 31 33 7 45 25 54 3 60 24 74 9 72 30 88 23 80 42 93 46 81 58 81 62 74 51 68 43 62 51 55 41 48 51 41 43 34 52 28 46 24 60z';
-const COLORS = ['rose', 'orange', 'jaune', 'acide', 'cyan', 'violet'];
-// 18 bandes (3 tours de palette) : assez pour que le défilement boucle sans trou
-const STRIPES = Array.from({ length: 18 }, (_, i) => COLORS[i % COLORS.length]);
+// 18 bandes (3 tours des 6 couleurs --cheveux-*) : assez pour que le défilement boucle sans trou
+const STRIPES = Array.from({ length: 18 }, (_, i) => (i % 6) + 1);
 ---
 
 <svg
@@ -43,8 +42,8 @@ const STRIPES = Array.from({ length: 18 }, (_, i) => COLORS[i % COLORS.length]);
   <g clip-path={`url(#${uid}-hair)`}>
     <g class="logo__stripes">
       {
-        STRIPES.map((color, i) => (
-          <rect x={-124 + i * 14} y="-10" width="14.6" height="100" transform="skewX(-22)" style={`fill: var(--${color})`} />
+        STRIPES.map((meche, i) => (
+          <rect x={-124 + i * 14} y="-10" width="14.6" height="100" transform="skewX(-22)" style={`fill: var(--cheveux-${meche})`} />
         ))
       }
     </g>

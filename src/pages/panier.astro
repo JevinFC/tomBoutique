@@ -1,0 +1,546 @@
+---
+// Panier : les lignes sont lues dans le navigateur (localStorage) et complétées avec les infos du
+// catalogue ; le paiement passe par Stripe Checkout en mode test (voir src/pages/api/checkout.ts).
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Annonce from '../components/Annonce.astro';
+import Footer from '../components/Footer.astro';
+import Garment from '../components/Garment.astro';
+import Header from '../components/Header.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+
+const produits = await getCollection('produits');
+// Juste de quoi afficher les lignes : au paiement, le serveur recalcule tout depuis les fiches
+const catalogue = Object.fromEntries(
+  produits.map((produit) => [
+    produit.id,
+    { nom: produit.data.nom, prix: produit.data.prix, epuise: produit.data.epuise },
+  ]),
+);
+const catalogueJson = JSON.stringify(catalogue).replace(/</g, '\\u003c');
+---
+
+<Base title={`Panier — ${site.nom}`}>
+  <Annonce />
+  <Header />
+
+  <main id="contenu" class="panier">
+    <header class="shead">
+      <span class="shead__idx">(Panier)</span>
+      <h1 class="shead__title">Ton <span class="panier__accent">panier</span></h1>
+      <p class="shead__aside">Paiement de test via Stripe&nbsp;: tout marche, mais aucun vrai argent ne bouge.</p>
+    </header>
+
+    <p class="panier__annule" data-annule role="status" hidden>
+      Paiement annulé&nbsp;: rien n'a été débité, ton panier t'attend.
+    </p>
+
+    <div class="panier__vide" data-vide hidden>
+      <p class="panier__vide-titre">Panier vide.</p>
+      <p class="panier__vide-texte">Pour l'instant. Le drop est juste là.</p>
+      <a class="btn" href="/#drop">Voir le drop <Icon name="arrow" /></a>
+    </div>
+
+    <div class="panier__plein" data-plein hidden>
+      <ul class="lignes" data-lignes aria-label="Articles du panier"></ul>
+
+      <aside class="ticket" aria-labelledby="ticket-titre">
+        <h2 class="ticket__titre" id="ticket-titre">Récap</h2>
+        <dl class="ticket__lignes">
+          <div>
+            <dt>Sous-total</dt>
+            <dd data-sous-total></dd>
+          </div>
+          <div>
+            <dt>Livraison</dt>
+            <dd data-livraison></dd>
+          </div>
+          <div class="ticket__total">
+            <dt>Total</dt>
+            <dd data-total></dd>
+          </div>
+        </dl>
+        <p class="ticket__seuil" data-seuil></p>
+        <button class="btn ticket__payer" type="button" data-payer>
+          <Icon name="lock" />
+          <span data-payer-texte>Payer avec Stripe</span>
+        </button>
+        <p class="ticket__erreur" data-erreur role="alert" hidden></p>
+        <p class="ticket__test">
+          Mode test&nbsp;: carte <strong>4242 4242 4242 4242</strong>, une date future et n'importe quel code. Aucune
+          vraie carte, aucun débit.
+        </p>
+      </aside>
+    </div>
+
+    <template data-modele-ligne>
+      <li class="ligne">
+        <a class="ligne__vignette" data-lien tabindex="-1" aria-hidden="true"></a>
+        <div class="ligne__infos">
+          <a class="ligne__nom" data-lien data-nom></a>
+          <p class="ligne__meta"><span data-taille></span> · <span data-prix></span></p>
+          <p class="ligne__epuise" data-epuise hidden>Épuisé, retiré du paiement</p>
+        </div>
+        <div class="ligne__qte" role="group" data-groupe-qte>
+          <button type="button" data-moins><Icon name="minus" /></button>
+          <span data-quantite></span>
+          <button type="button" data-plus><Icon name="plus" /></button>
+        </div>
+        <p class="ligne__total" data-total-ligne></p>
+        <button class="ligne__suppr" type="button" data-suppr><Icon name="close" /></button>
+      </li>
+    </template>
+
+    <template data-vignettes>
+      {
+        produits.map((produit) => (
+          <div data-vignette={produit.id}>
+            <Garment type={produit.data.categorie} />
+          </div>
+        ))
+      }
+    </template>
+
+    <script is:inline type="application/json" id="tb-catalogue" set:html={catalogueJson} />
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  import { changerQuantite, lirePanier, retirer, type Ligne } from '../scripts/panier';
+  import { enCentimes, formatCentimes, livraisonCentimes, PANIER } from '../data/catalogue';
+  import { site } from '../data/site';
+
+  interface Produit {
+    nom: string;
+    prix: number;
+    epuise: boolean;
+  }
+
+  const catalogue: Record<string, Produit> = JSON.parse(document.getElementById('tb-catalogue')?.textContent || '{}');
+  const trouver = <T extends Element>(selecteur: string) => document.querySelector<T>(selecteur);
+  const liste = trouver<HTMLUListElement>('[data-lignes]');
+  const modele = trouver<HTMLTemplateElement>('[data-modele-ligne]');
+  const vignettes = trouver<HTMLTemplateElement>('[data-vignettes]');
+  const vide = trouver<HTMLElement>('[data-vide]');
+  const plein = trouver<HTMLElement>('[data-plein]');
+  const payer = trouver<HTMLButtonElement>('[data-payer]');
+  const payerTexte = trouver<HTMLElement>('[data-payer-texte]');
+  const erreur = trouver<HTMLElement>('[data-erreur]');
+  const ACTIONS = ['data-moins', 'data-plus', 'data-suppr'];
+
+  const ecrire = (selecteur: string, texte: string, racine: ParentNode = document) => {
+    const el = racine.querySelector(selecteur);
+    if (el) el.textContent = texte;
+  };
+
+  // Retour depuis Stripe sans avoir payé
+  if (new URLSearchParams(window.location.search).has('annule')) {
+    const annule = trouver<HTMLElement>('[data-annule]');
+    if (annule) annule.hidden = false;
+  }
+
+  function creerLigne({ id, taille, quantite }: Ligne) {
+    const produit = catalogue[id];
+    const prix = enCentimes(produit.prix);
+    const nom = taille === 'Unique' ? produit.nom : `${produit.nom} (${taille})`;
+    const ligne = modele!.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+    ligne.dataset.cle = `${id}:${taille}`;
+    ligne.classList.toggle('ligne--epuise', produit.epuise);
+
+    ligne.querySelectorAll<HTMLAnchorElement>('[data-lien]').forEach((lien) => (lien.href = `/produits/${id}`));
+    const vignette = vignettes?.content.querySelector(`[data-vignette="${CSS.escape(id)}"]`);
+    if (vignette) {
+      ligne.querySelector('.ligne__vignette')?.append(...[...vignette.children].map((el) => el.cloneNode(true)));
+    }
+    ecrire('[data-nom]', produit.nom, ligne);
+    ecrire('[data-taille]', taille === 'Unique' ? 'Taille unique' : `Taille ${taille}`, ligne);
+    ecrire('[data-prix]', formatCentimes(prix), ligne);
+    ecrire('[data-quantite]', String(quantite), ligne);
+    ecrire('[data-total-ligne]', formatCentimes(prix * quantite), ligne);
+    const epuise = ligne.querySelector<HTMLElement>('[data-epuise]');
+    if (epuise) epuise.hidden = !produit.epuise;
+
+    ligne.querySelector('[data-groupe-qte]')?.setAttribute('aria-label', `Quantité, ${nom}`);
+    const moins = ligne.querySelector<HTMLButtonElement>('[data-moins]')!;
+    const plus = ligne.querySelector<HTMLButtonElement>('[data-plus]')!;
+    const suppr = ligne.querySelector<HTMLButtonElement>('[data-suppr]')!;
+    moins.setAttribute('aria-label', `Un de moins, ${nom}`);
+    plus.setAttribute('aria-label', `Un de plus, ${nom}`);
+    suppr.setAttribute('aria-label', `Retirer ${nom} du panier`);
+    plus.disabled = quantite >= PANIER.quantiteMax;
+    moins.addEventListener('click', () => changerQuantite(id, taille, quantite - 1));
+    plus.addEventListener('click', () => changerQuantite(id, taille, quantite + 1));
+    suppr.addEventListener('click', () => retirer(id, taille));
+    return ligne;
+  }
+
+  function rendre() {
+    if (!liste || !vide || !plein || !payer) return;
+    // On note le bouton qui avait le focus pour le retrouver après le nouveau rendu
+    const actif = document.activeElement as HTMLElement | null;
+    const cle = actif?.closest<HTMLElement>('.ligne')?.dataset.cle;
+    const action = ACTIONS.find((attribut) => actif?.hasAttribute(attribut));
+
+    // Une pièce retirée du catalogue disparaît simplement du panier
+    const lignes = lirePanier().filter((ligne) => catalogue[ligne.id]);
+    vide.hidden = lignes.length > 0;
+    plein.hidden = lignes.length === 0;
+    liste.replaceChildren(...lignes.map(creerLigne));
+
+    const payables = lignes.filter((ligne) => !catalogue[ligne.id].epuise);
+    const sousTotal = payables.reduce((total, l) => total + enCentimes(catalogue[l.id].prix) * l.quantite, 0);
+    const livraison = livraisonCentimes(sousTotal);
+    const reste = enCentimes(site.livraison.offerteDes) - sousTotal;
+    ecrire('[data-sous-total]', formatCentimes(sousTotal));
+    ecrire('[data-livraison]', livraison === 0 ? 'Offerte' : formatCentimes(livraison));
+    ecrire('[data-total]', formatCentimes(sousTotal + livraison));
+    ecrire(
+      '[data-seuil]',
+      reste > 0 ? `Plus que ${formatCentimes(reste)} pour la livraison offerte.` : 'Livraison offerte. Bien joué.',
+    );
+    payer.disabled = payables.length === 0;
+
+    if (cle && action) {
+      const ligne = liste.querySelector<HTMLElement>(`[data-cle="${CSS.escape(cle)}"]`);
+      const candidats = [
+        ligne?.querySelector<HTMLButtonElement>(`[${action}]`),
+        ...ACTIONS.map((attribut) => ligne?.querySelector<HTMLButtonElement>(`[${attribut}]`)),
+        liste.querySelector<HTMLElement>('.ligne__nom'),
+        vide.querySelector<HTMLElement>('a'),
+      ];
+      candidats.find((el) => el && !(el as HTMLButtonElement).disabled && !el.closest('[hidden]'))?.focus();
+    }
+  }
+
+  window.addEventListener('panier:change', rendre);
+  rendre();
+
+  payer?.addEventListener('click', async () => {
+    const lignes = lirePanier().filter((ligne) => catalogue[ligne.id] && !catalogue[ligne.id].epuise);
+    if (!lignes.length || !payerTexte || !erreur) return;
+    erreur.hidden = true;
+    payer.disabled = true;
+    payerTexte.textContent = 'Direction Stripe…';
+    try {
+      const reponse = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lignes }),
+      });
+      const donnees: { url?: unknown; erreur?: unknown } = await reponse.json().catch(() => ({}));
+      // On ne suit qu'une adresse de paiement Stripe
+      if (!reponse.ok || typeof donnees.url !== 'string' || !donnees.url.startsWith('https://checkout.stripe.com/')) {
+        throw new Error(
+          typeof donnees.erreur === 'string' ? donnees.erreur : "Le paiement n'a pas pu démarrer. Réessaie dans un instant.",
+        );
+      }
+      window.location.assign(donnees.url);
+    } catch (e) {
+      // Une coupure réseau donne un message technique en anglais : on le remplace
+      erreur.textContent =
+        e instanceof Error && !(e instanceof TypeError) ? e.message : "Le paiement n'a pas pu démarrer. Réessaie dans un instant.";
+      erreur.hidden = false;
+      payer.disabled = false;
+      payerTexte.textContent = 'Payer avec Stripe';
+    }
+  });
+
+  // Retour arrière depuis Stripe : la page peut revenir du cache avec le bouton encore bloqué
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted || !payerTexte) return;
+    payerTexte.textContent = 'Payer avec Stripe';
+    rendre();
+  });
+</script>
+
+<style>
+  .panier {
+    min-height: 60vh;
+    padding: clamp(32px, 4vw, 64px) var(--gutter) clamp(90px, 10vw, 150px);
+  }
+
+  .panier__accent {
+    color: var(--accent);
+  }
+
+  .panier__annule {
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
+  }
+
+  /* --- Panier vide --- */
+
+  .panier__vide {
+    display: grid;
+    justify-items: start;
+    gap: 18px;
+  }
+
+  .panier__vide-titre {
+    font-family: var(--f-display);
+    font-size: clamp(64px, 12vw, 200px);
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.8;
+    text-transform: uppercase;
+  }
+
+  .panier__vide-texte {
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: var(--gris);
+  }
+
+  /* --- Les lignes --- */
+
+  .panier__plein {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 400px);
+    align-items: start;
+    gap: clamp(28px, 4vw, 64px);
+  }
+
+  .lignes {
+    border-top: 2px solid var(--ligne);
+  }
+
+  .ligne {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0;
+    border-bottom: 2px solid var(--ligne);
+  }
+
+  .ligne__vignette {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--photo-trame), var(--photo-flash);
+    border: 2px solid var(--blanc);
+  }
+
+  .ligne__vignette :global(.garment) {
+    width: 84%;
+    height: 84%;
+    margin: 8%;
+  }
+
+  .ligne--epuise .ligne__vignette {
+    filter: grayscale(1) brightness(0.6);
+  }
+
+  .ligne__nom {
+    font-family: var(--f-display);
+    font-size: clamp(20px, 2vw, 28px);
+    font-weight: 800;
+    font-stretch: 78%;
+    line-height: 1;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .ligne__nom:hover {
+    color: var(--accent);
+  }
+
+  .ligne__meta {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--gris);
+  }
+
+  .ligne__epuise {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .ligne__qte {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--blanc);
+  }
+
+  .ligne__qte button,
+  .ligne__suppr {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+
+  .ligne__qte button:hover:not(:disabled) {
+    color: var(--noir);
+    background: var(--blanc);
+  }
+
+  .ligne__qte button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .ligne__qte span {
+    min-width: 2.4ch;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .ligne__total {
+    min-width: 76px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .ligne__suppr {
+    color: var(--gris);
+  }
+
+  .ligne__suppr:hover {
+    color: var(--accent);
+  }
+
+  /* --- Le récap, façon ticket de caisse sur papier crème --- */
+
+  .ticket {
+    position: sticky;
+    top: calc(var(--hdr-h) + 24px);
+    display: grid;
+    gap: 18px;
+    padding: clamp(22px, 2.6vw, 32px);
+    color: var(--noir);
+    background: var(--blanc);
+    border: 3px solid var(--noir);
+    box-shadow: var(--ombre) var(--ombre) 0 var(--accent);
+    rotate: -1deg;
+  }
+
+  .ticket__titre {
+    font-family: var(--f-display);
+    font-size: 44px;
+    font-weight: 900;
+    font-stretch: 60%;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+
+  .ticket__lignes {
+    display: grid;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .ticket__lignes div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ticket__lignes dd {
+    font-weight: 700;
+  }
+
+  .ticket__total {
+    padding-top: 12px;
+    font-size: 18px;
+    border-top: 2px dashed var(--noir);
+  }
+
+  .ticket__seuil {
+    font-size: 13px;
+  }
+
+  /* Sur le papier crème, l'ombre du bouton rouge passe en noir */
+  .ticket__payer {
+    justify-content: center;
+    width: 100%;
+    box-shadow: var(--ombre) var(--ombre) 0 var(--noir);
+  }
+
+  .ticket__payer:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .ticket__payer:hover {
+      box-shadow: calc(var(--ombre) + 3px) calc(var(--ombre) + 3px) 0 var(--noir);
+    }
+  }
+
+  .ticket__erreur {
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blanc);
+    background: var(--noir);
+    border-left: 6px solid var(--accent);
+  }
+
+  .ticket__test {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #55555c;
+  }
+
+  @media (max-width: 900px) {
+    .panier__plein {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ticket {
+      position: static;
+      margin-right: var(--ombre);
+      rotate: 0deg;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .ligne {
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      grid-template-areas:
+        'vignette infos suppr'
+        'vignette qte total';
+      gap: 10px 14px;
+    }
+
+    .ligne__vignette {
+      grid-area: vignette;
+      align-self: start;
+    }
+
+    .ligne__infos {
+      grid-area: infos;
+    }
+
+    .ligne__qte {
+      grid-area: qte;
+      justify-self: start;
+    }
+
+    .ligne__total {
+      grid-area: total;
+    }
+
+    .ligne__suppr {
+      grid-area: suppr;
+    }
+  }
+</style>

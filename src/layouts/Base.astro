@@ -39,7 +39,9 @@ const { title = `${site.nom} — ${site.slogan}`, description = site.description
         try {
           dejaVue = sessionStorage.getItem('tb-intro') === '1';
         } catch (e) {}
-        if (calme || dejaVue) root.classList.add('no-intro');
+        var params = new URLSearchParams(window.location.search);
+        // ?intro dans l'URL force l'intro, même si elle a déjà été vue pendant la session
+        if (calme || (dejaVue && !params.has('intro'))) root.classList.add('no-intro');
         // Filet de sécurité : la page s'affiche même si un script plante
         setTimeout(function () {
           root.classList.add('is-ready');
@@ -63,9 +65,16 @@ const { title = `${site.nom} — ${site.slogan}`, description = site.description
     <script>
       import { initMotion } from '../scripts/motion';
       import { initEasterEgg } from '../scripts/fun';
+      import { initPanier } from '../scripts/panier';
 
       initMotion();
       initEasterEgg();
+      initPanier();
+
+      // Pages sans intro (fiche produit, panier…) : rien à attendre, la page s'anime tout de suite
+      if (!document.querySelector('[data-loader]')) {
+        requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.add('is-ready')));
+      }
 
       // Quand on change d'onglet, le titre réclame qu'on revienne
       const titre = document.title;
