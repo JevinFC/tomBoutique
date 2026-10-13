@@ -2,6 +2,8 @@
 dist/
 # generated types
 .astro/
+# Netlify (fonctions générées à la compilation, CLI)
+.netlify/
 
 # dependencies
 node_modules/

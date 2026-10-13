@@ -13,7 +13,12 @@ const MOTS = [
   { gothique: false, texte: prenom.toUpperCase() },
   { gothique: true, texte: suite.join(' ') },
 ].map(({ gothique, texte }) => ({ gothique, lettres: [...texte].map((lettre) => ({ lettre, i: rang++ })) }));
-const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
+const AIDE = [
+  { nom: 'Livraison', href: '/cgv#livraison' },
+  { nom: 'Retours', href: '/cgv#retractation' },
+  { nom: 'Guide des tailles', href: '#' },
+  { nom: 'Contact', href: '/mentions-legales#editeur' },
+];
 ---
 
 <footer class="ftr">
@@ -40,7 +45,7 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
         {
           AIDE.map((lien) => (
             <li>
-              <a href="#">{lien}</a>
+              <a href={lien.href}>{lien.nom}</a>
             </li>
           ))
         }
@@ -79,6 +84,10 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
 
   <div class="ftr__bottom">
     <p>© {new Date().getFullYear()} {site.nom}</p>
+    <nav class="ftr__legal" aria-label="Infos légales">
+      <a href="/cgv">CGV</a>
+      <a href="/mentions-legales">Mentions légales</a>
+    </nav>
     <p>Prototype v0.1 — les vêtements sont des placeholders</p>
     <a href="#top">Retour en haut <Icon name="arrow" class="ftr__up" /></a>
   </div>
@@ -217,6 +226,23 @@ const AIDE = ['Livraison', 'Retours', 'Guide des tailles', 'Contact'];
 
   .ftr__bottom :global(.ftr__up) {
     rotate: -90deg;
+  }
+
+  .ftr__legal {
+    display: flex;
+    gap: 18px;
+  }
+
+  /* Discrets comme le reste de la ligne (pas la taille des liens des colonnes) */
+  .ftr__bottom .ftr__legal a {
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--blanc);
+    background-size: 0 2px;
+  }
+
+  .ftr__bottom .ftr__legal a:hover {
+    background-size: 100% 2px;
   }
 
   @media (max-width: 800px) {

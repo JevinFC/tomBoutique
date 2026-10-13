@@ -3,7 +3,7 @@
 Prototype de la boutique de Tom : **noir dehors, fluo dedans.**
 Des fringues sombres (techno, rap underground) pour quelqu'un de très coloré — littéralement : ses cheveux.
 
-Fait avec [Astro](https://astro.build), sans framework JS : du HTML, du CSS et un peu de JavaScript pour les animations. Les pages sont statiques ; seul le paiement passe par un petit serveur Node.
+Fait avec [Astro](https://astro.build), sans framework JS : du HTML, du CSS et un peu de JavaScript pour les animations. Les pages sont statiques ; seul le paiement passe par des fonctions serveur. Le site est hébergé sur [Netlify](https://www.netlify.com) (voir « Mettre en ligne »).
 
 ## Lancer le site
 
@@ -19,8 +19,7 @@ Puis ouvrir http://localhost:4321.
 | Commande          | Action                                        |
 | :---------------- | :-------------------------------------------- |
 | `npm run dev`     | Serveur de développement sur `localhost:4321` |
-| `npm run build`   | Génère le site final dans `dist/` (pages + serveur Node du paiement) |
-| `npm run preview` | Lance le site généré, comme en ligne           |
+| `npm run build`   | Génère le site final (pages + fonctions du paiement), comme le fait Netlify |
 
 ## Modifier les vêtements
 
@@ -47,12 +46,19 @@ Sans `photo`, une silhouette du vêtement s'affiche à la place, sur le fond com
 
 `src/data/site.ts` : slogan, bandeau d'infos du haut, textes des deux bandes qui défilent, date du prochain drop (compte à rebours), livraison (seuil de gratuité et prix), liens des réseaux.
 
+## Les infos légales
+
+`src/data/legal.ts` : nom du vendeur, statut, adresse, SIRET, TVA, e-mail, hébergeur, médiateur de la consommation, transporteur, frais de retour. Tant qu'un champ vaut `null`, les CGV et les mentions légales affichent à sa place un repère rouge « [À compléter : …] ». La livraison (prix, pays, délai) et la durée des retours viennent de `src/data/site.ts`, les mêmes valeurs que le panier et le paiement.
+
+Ces textes sont un modèle basé sur le code de la consommation : à faire relire avant d'ouvrir la boutique pour de vrai.
+
 ## Les pages
 
 - `/` : l'accueil.
 - `/produits/<nom-du-fichier>` : une fiche par vêtement (photo, prix, description, choix de la taille, ajout au panier, « Dans le même drop »). On y arrive en cliquant sur une carte, ou sur le polaroid du hero.
 - `/panier` : les articles (quantités, suppression), la livraison offerte dès 80 €, et le bouton « Payer avec Stripe ». Le panier est gardé dans le navigateur.
 - `/merci` : la confirmation après le paiement.
+- `/cgv` et `/mentions-legales` : les conditions générales de vente et les mentions légales (avec données personnelles et cookies), liées depuis le pied de page et le panier.
 - Toute autre adresse : la page 404 (« Le disque a sauté »), avec le vinyle du prochain drop à la place du zéro. Il saute à chaque tour, et on peut le scratcher d'un clic.
 
 Depuis la grille, une pièce à taille unique s'ajoute directement au panier ; pour les autres, le bouton mène à la fiche pour choisir la taille.
@@ -79,7 +85,20 @@ Ce qui rend le paiement sûr :
 
 **Webhook (facultatif)**, pour que le serveur soit prévenu de chaque commande payée : installe la [Stripe CLI](https://docs.stripe.com/stripe-cli), lance `stripe listen --forward-to localhost:4321/api/stripe/webhook`, colle le secret `whsec_…` affiché dans `.env` (`STRIPE_WEBHOOK_SECRET`) puis relance `npm run dev`. Chaque commande s'affiche alors dans le terminal ; la signature de Stripe est vérifiée, un faux appel est rejeté.
 
-**En ligne**, il faut un hébergeur qui fait tourner Node (Render, Railway, un VPS…) : `npm run build`, puis `node dist/server/entry.mjs`, avec `STRIPE_SECRET_KEY` et `SITE_URL` (l'adresse publique du site, ex. `https://tomboutique.fr`) dans les variables d'environnement.
+**En ligne**, la clé se règle dans Netlify (voir ci-dessous) et non dans `.env`, qui reste sur ton ordinateur.
+
+## Mettre en ligne (Netlify)
+
+Le site est relié au dépôt GitHub : **chaque modification envoyée sur la branche `main` est mise en ligne toute seule**, en une à deux minutes (y compris les changements faits directement sur github.com).
+
+La première fois :
+
+1. Sur [netlify.com](https://www.netlify.com), créer un compte avec « Sign up with GitHub » (l'offre gratuite autorise un usage commercial).
+2. **Add new project → Import an existing project → GitHub → tomBoutique**. Les réglages sont détectés (commande `npm run build`, Node 22 via `.nvmrc`) : cliquer sur **Deploy**.
+3. Renommer l'adresse dans **Site configuration → Change site name** (ex. `tom-boutique.netlify.app`).
+4. Pour le paiement de test : **Site configuration → Environment variables → Add a variable**, `STRIPE_SECRET_KEY` = la clé `sk_test_…`, puis **Deploys → Trigger deploy**.
+
+Plus tard, avec un nom de domaine (ex. `tomboutique.fr`) : le brancher dans **Domain management**, et ajouter la variable `SITE_URL` avec cette adresse. Si une mise en ligne échoue (faute de frappe dans une fiche, par exemple), Netlify garde la version précédente en ligne et affiche l'erreur dans **Deploys**.
 
 ## Le fond
 

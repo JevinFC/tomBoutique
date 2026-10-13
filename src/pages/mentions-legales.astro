@@ -1,0 +1,147 @@
+---
+// Mentions légales, données personnelles et cookies. Les infos de la boutique viennent de
+// src/data/legal.ts : les champs vides s'affichent « [À compléter : …] ».
+// Si une mesure d'audience ou des cookies publicitaires sont ajoutés un jour, il faudra mettre à jour
+// la partie « Cookies » et demander le consentement des visiteurs avant de les déposer.
+import PageLegale from '../layouts/PageLegale.astro';
+import Info from '../components/Info.astro';
+import { legal } from '../data/legal';
+import { site } from '../data/site';
+
+const SOMMAIRE = [
+  { id: 'editeur', titre: 'Éditeur du site' },
+  { id: 'publication', titre: 'Directeur de la publication' },
+  { id: 'hebergement', titre: 'Hébergement' },
+  { id: 'propriete', titre: 'Propriété intellectuelle' },
+  { id: 'donnees', titre: 'Données personnelles' },
+  { id: 'cookies', titre: 'Cookies et stockage' },
+];
+---
+
+<PageLegale
+  titre="Mentions légales"
+  description={`Mentions légales de ${site.nom} : éditeur, hébergeur, données personnelles et cookies.`}
+  sommaire={SOMMAIRE}
+>
+  <section id="editeur">
+    <h2>Éditeur du site</h2>
+    <dl>
+      <dt>Nom commercial</dt>
+      <dd>{site.nom}</dd>
+      <dt>Exploitant</dt>
+      <dd><Info valeur={legal.vendeur} label="nom et prénom, ou nom de la société" /></dd>
+      <dt>Statut</dt>
+      <dd><Info valeur={legal.statut} label="micro-entreprise, SAS… (et capital social pour une société)" /></dd>
+      <dt>Adresse</dt>
+      <dd><Info valeur={legal.adresse} label="adresse du siège" /></dd>
+      <dt>SIRET</dt>
+      <dd><Info valeur={legal.siret} label="numéro SIRET" /></dd>
+      <dt>Immatriculation</dt>
+      <dd><Info valeur={legal.immatriculation} label="RCS de la ville, ou RNE" /></dd>
+      <dt>TVA</dt>
+      <dd><Info valeur={legal.tva} label="numéro de TVA, ou « TVA non applicable, art. 293 B du CGI »" /></dd>
+      <dt>E-mail</dt>
+      <dd><Info valeur={legal.email} label="e-mail de contact" lien="mail" /></dd>
+      <dt>Téléphone</dt>
+      <dd><Info valeur={legal.telephone} label="numéro de téléphone" lien="tel" /></dd>
+    </dl>
+  </section>
+
+  <section id="publication">
+    <h2>Directeur de la publication</h2>
+    <p><Info valeur={legal.directeurPublication} label="nom du responsable du contenu du site" /></p>
+  </section>
+
+  <section id="hebergement">
+    <h2>Hébergement</h2>
+    <dl>
+      <dt>Hébergeur</dt>
+      <dd><Info valeur={legal.hebergeur.nom} label="nom de l'hébergeur" /></dd>
+      <dt>Adresse</dt>
+      <dd><Info valeur={legal.hebergeur.adresse} label="adresse de l'hébergeur" /></dd>
+      <dt>Téléphone</dt>
+      <dd><Info valeur={legal.hebergeur.telephone} label="téléphone de l'hébergeur" lien="tel" /></dd>
+    </dl>
+  </section>
+
+  <section id="propriete">
+    <h2>Propriété intellectuelle</h2>
+    <p>
+      Le nom {site.nom}, le logo (le smiley aux cheveux arc-en-ciel), les textes, les visuels, les photos et la mise en page
+      du site sont protégés par le droit d'auteur et le droit des marques. Toute reproduction ou réutilisation, même
+      partielle, sans autorisation écrite préalable est interdite.
+    </p>
+    <p class="legal__note">
+      Polices Anybody, Space Mono et UnifrakturCook sous licence SIL Open Font License. Site réalisé avec Astro.
+    </p>
+  </section>
+
+  <section id="donnees">
+    <h2>Données personnelles</h2>
+    <p>
+      Le responsable du traitement est <Info valeur={legal.vendeur} label="nom du vendeur" />, joignable à
+      <Info valeur={legal.email} label="e-mail de contact" lien="mail" />. Les données sont traitées conformément au
+      Règlement général sur la protection des données (RGPD) et à la loi Informatique et Libertés.
+    </p>
+
+    <h3>Ce qui est collecté, et pourquoi</h3>
+    <ul>
+      <li>
+        <strong>Commande&nbsp;:</strong> nom, adresse de livraison et e-mail, pour traiter, livrer et suivre la commande
+        (exécution du contrat), et pour la comptabilité (obligation légale).
+      </li>
+      <li>
+        <strong>Paiement&nbsp;:</strong> les données de carte sont saisies et traitées directement par Stripe, y compris pour
+        la prévention de la fraude&nbsp;; {site.nom} n'y a jamais accès.
+      </li>
+      <li>
+        <strong>Newsletter&nbsp;:</strong> l'adresse e-mail, uniquement si tu t'inscris (consentement), pour annoncer les
+        drops et les soirées. Désinscription possible à tout moment depuis chaque e-mail.
+      </li>
+    </ul>
+
+    <h3>Qui y a accès</h3>
+    <p>
+      Uniquement les prestataires nécessaires&nbsp;: Stripe (paiement), le transporteur
+      (<Info valeur={legal.transporteur} label="transporteur" />), l'hébergeur du site et le service d'envoi de la
+      newsletter (<Info valeur={legal.newsletter} label="service d'e-mailing" />). Les données ne sont jamais vendues ni
+      louées.
+    </p>
+    <p>
+      Certains prestataires, comme Stripe, peuvent traiter des données hors de l'Union européenne&nbsp;; ces transferts
+      sont encadrés par les garanties prévues par le RGPD (clauses contractuelles types de la Commission européenne ou
+      cadre de protection des données UE–États-Unis).
+    </p>
+
+    <h3>Combien de temps</h3>
+    <ul>
+      <li>Commandes et factures&nbsp;: 10 ans, comme l'exige la loi pour les pièces comptables.</li>
+      <li>Données client&nbsp;: 3 ans après la dernière commande.</li>
+      <li>Newsletter&nbsp;: jusqu'à la désinscription, ou 3 ans sans ouverture d'aucun e-mail.</li>
+    </ul>
+
+    <h3>Tes droits</h3>
+    <p>
+      Tu peux demander à accéder à tes données, les corriger, les supprimer, les récupérer, limiter leur utilisation ou
+      t'y opposer, et retirer ton consentement à tout moment. Il suffit d'écrire à
+      <Info valeur={legal.email} label="e-mail de contact" lien="mail" />&nbsp;; la réponse arrive sous un mois maximum. En
+      cas de désaccord, tu peux adresser une réclamation à la CNIL (<a href="https://www.cnil.fr">cnil.fr</a>).
+    </p>
+  </section>
+
+  <section id="cookies">
+    <h2>Cookies et stockage</h2>
+    <p>
+      Le site n'utilise ni cookie publicitaire, ni mesure d'audience, ni traceur de réseau social. Il garde seulement deux
+      informations dans ton navigateur, nécessaires à son fonctionnement (elles ne demandent donc pas de consentement)&nbsp;:
+    </p>
+    <ul>
+      <li><strong>Ton panier</strong>, pour le retrouver d'une page à l'autre, jusqu'à la commande ou jusqu'à ce que tu le vides.</li>
+      <li><strong>L'intro déjà vue</strong>, pour ne pas la rejouer à chaque page&nbsp;; effacé à la fermeture de l'onglet.</li>
+    </ul>
+    <p>
+      La page de paiement de Stripe dépose ses propres cookies, nécessaires à la sécurité du paiement&nbsp;: voir la
+      <a href="https://stripe.com/fr/privacy">politique de confidentialité de Stripe</a>.
+    </p>
+  </section>
+</PageLegale>

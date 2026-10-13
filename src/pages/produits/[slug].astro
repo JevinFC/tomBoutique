@@ -109,7 +109,7 @@ const tailleUnique = tailles.length === 1;
 
         <ul class="fiche__plus">
           <li>Livraison offerte dès {site.livraison.offerteDes} €, sinon {formatPrix(site.livraison.prix)}</li>
-          <li>Retours sous 30 jours</li>
+          <li>Retours sous {site.retours.jours} jours</li>
           <li>Paiement sécurisé par Stripe (mode test&nbsp;: aucun vrai débit)</li>
         </ul>
       </div>
@@ -207,8 +207,15 @@ const tailleUnique = tailles.length === 1;
   /* --- La photo (même direction que les cartes : fond noir, flash, trame) --- */
 
   .fiche__media {
+    /* Ce qui est au-dessus du carré : bandeau, en-tête, marge et lien « Drop 001 » */
+    --au-dessus: calc(32px + var(--hdr-h) + clamp(28px, 4vw, 56px) + 32px + clamp(20px, 3vw, 36px));
     position: relative;
     aspect-ratio: 4 / 5;
+    /* Le carré tient dans l'écran sans scroller : sur un écran large mais peu haut, il perd en
+       hauteur plutôt que de déborder (le vêtement reste centré, une photo est recadrée).
+       La largeur fixée empêche le navigateur de la réduire pour garder le 4/5. */
+    width: 100%;
+    max-height: max(320px, calc(100svh - var(--au-dessus) - 32px));
     overflow: hidden;
     border: 2px solid var(--blanc);
     box-shadow: var(--ombre) var(--ombre) 0 var(--accent);

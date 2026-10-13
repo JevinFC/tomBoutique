@@ -7,6 +7,7 @@ import { SITE_URL } from 'astro:env/server';
 import { z } from 'astro/zod';
 import type Stripe from 'stripe';
 import { enCentimes, livraisonCentimes, PANIER } from '../../data/catalogue';
+import { site } from '../../data/site';
 import { raisonIndisponible, stripeTest } from '../../lib/stripe';
 
 export const prerender = false;
@@ -89,7 +90,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       mode: 'payment',
       locale: 'fr',
       line_items: articles,
-      shipping_address_collection: { allowed_countries: ['FR', 'BE', 'CH', 'LU'] },
+      shipping_address_collection: { allowed_countries: site.livraison.pays.map((pays) => pays.code) },
       shipping_options: [
         {
           shipping_rate_data: {
@@ -97,8 +98,8 @@ export const POST: APIRoute = async ({ request, url }) => {
             display_name: livraison === 0 ? 'Livraison offerte' : 'Livraison standard',
             fixed_amount: { amount: livraison, currency: 'eur' },
             delivery_estimate: {
-              minimum: { unit: 'business_day', value: 2 },
-              maximum: { unit: 'business_day', value: 5 },
+              minimum: { unit: 'business_day', value: site.livraison.delai.min },
+              maximum: { unit: 'business_day', value: site.livraison.delai.max },
             },
           },
         },

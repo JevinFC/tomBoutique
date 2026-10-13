@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig, envField } from 'astro/config';
 
-import node from '@astrojs/node';
+import netlify from '@astrojs/netlify';
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,14 +11,13 @@ export default defineConfig({
   // Pas de barre d'outils Astro en bas de l'écran pendant les démos
   devToolbar: { enabled: false },
 
-  // Les pages restent statiques ; seules les routes de paiement (prerender = false)
-  // tournent sur un petit serveur Node
-  adapter: node({
-    mode: 'standalone',
-  }),
+  // Hébergé sur Netlify : les pages restent statiques, seules les routes de paiement
+  // (prerender = false) tournent en fonctions serveur
+  adapter: netlify(),
 
-  // Lues côté serveur uniquement, au démarrage (jamais envoyées au navigateur) :
-  // les clés Stripe, et l'adresse publique du site une fois en ligne (ex. https://tomboutique.fr)
+  // Lues côté serveur uniquement (jamais envoyées au navigateur) : les clés Stripe, et l'adresse
+  // publique du site si elle diffère de celle de Netlify (ex. https://tomboutique.fr).
+  // En ligne, elles se règlent dans Netlify : Site configuration → Environment variables
   env: {
     schema: {
       STRIPE_SECRET_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),

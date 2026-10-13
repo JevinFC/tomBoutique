@@ -67,6 +67,7 @@ const catalogueJson = JSON.stringify(catalogue).replace(/</g, '\\u003c');
           <span data-payer-texte>Payer avec Stripe</span>
         </button>
         <p class="ticket__erreur" data-erreur role="alert" hidden></p>
+        <p class="ticket__cgv">En payant, tu acceptes les <a href="/cgv">conditions générales de vente</a>.</p>
         <p class="ticket__test">
           Mode test&nbsp;: carte <strong>4242 4242 4242 4242</strong>, une date future et n'importe quel code. Aucune
           vraie carte, aucun débit.
@@ -498,6 +499,16 @@ const catalogueJson = JSON.stringify(catalogue).replace(/</g, '\\u003c');
     font-size: 12px;
     line-height: 1.6;
     color: #55555c;
+  }
+
+  .ticket__cgv {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .ticket__cgv a {
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 3px;
   }
 
   @media (max-width: 900px) {

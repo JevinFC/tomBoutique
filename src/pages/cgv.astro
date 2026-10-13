@@ -1,0 +1,296 @@
+---
+// Conditions générales de vente. Les infos de la boutique viennent de src/data/legal.ts (les champs
+// vides s'affichent « [À compléter : …] »), la livraison et les retours de src/data/site.ts.
+// Modèle à faire relire avant l'ouverture : il suit le code de la consommation pour la vente en ligne
+// à des particuliers, mais ne remplace pas l'avis d'un juriste.
+import PageLegale from '../layouts/PageLegale.astro';
+import Info from '../components/Info.astro';
+import { formatPrix } from '../data/catalogue';
+import { legal } from '../data/legal';
+import { site } from '../data/site';
+
+const { livraison, retours } = site;
+const noms = livraison.pays.map((pays) => pays.nom);
+const pays = `${noms.slice(0, -1).join(', ')} et ${noms.at(-1)}`;
+const delai = `${livraison.delai.min} à ${livraison.delai.max} jours ouvrés`;
+
+const SOMMAIRE = [
+  { id: 'objet', titre: 'Objet' },
+  { id: 'vendeur', titre: 'Le vendeur' },
+  { id: 'produits', titre: 'Les produits' },
+  { id: 'prix', titre: 'Prix' },
+  { id: 'commande', titre: 'Commande' },
+  { id: 'paiement', titre: 'Paiement' },
+  { id: 'livraison', titre: 'Livraison' },
+  { id: 'retractation', titre: 'Rétractation et retours' },
+  { id: 'garanties', titre: 'Garanties légales' },
+  { id: 'donnees', titre: 'Données personnelles' },
+  { id: 'litiges', titre: 'Réclamations et litiges' },
+  { id: 'formulaire', titre: 'Formulaire de rétractation' },
+];
+---
+
+<PageLegale
+  titre="CGV"
+  nomComplet="Conditions générales de vente"
+  description={`Conditions générales de vente de ${site.nom} : commande, paiement, livraison, retours et garanties.`}
+  sommaire={SOMMAIRE}
+>
+  <div class="legal__bref">
+    <h2>En bref</h2>
+    <ul>
+      <li>Livraison en {pays} sous {delai}, offerte dès {formatPrix(livraison.offerteDes)} d'achat (sinon {formatPrix(livraison.prix)}).</li>
+      <li>{retours.jours} jours pour changer d'avis après réception, sans te justifier (la loi en prévoit 14).</li>
+      <li>Garantie légale de conformité de 2 ans sur chaque article.</li>
+      <li>Paiement sécurisé par Stripe&nbsp;: tes numéros de carte ne passent jamais par le site.</li>
+    </ul>
+    <p class="legal__note">Ce résumé ne remplace pas les conditions ci-dessous, qui font foi.</p>
+  </div>
+
+  <section id="objet">
+    <h2>Objet</h2>
+    <p>
+      Les présentes conditions générales de vente (CGV) s'appliquent à toutes les commandes passées sur le site {site.nom}
+      par des particuliers (consommateurs) majeurs. Elles précisent les droits et obligations du vendeur et du client.
+    </p>
+    <p>
+      Le client les accepte en validant sa commande. Les CGV applicables sont celles en ligne au moment de la commande&nbsp;;
+      elles peuvent être modifiées à tout moment, sans effet sur les commandes déjà passées.
+    </p>
+  </section>
+
+  <section id="vendeur">
+    <h2>Le vendeur</h2>
+    <p>Le site {site.nom} est exploité par&nbsp;:</p>
+    <dl>
+      <dt>Vendeur</dt>
+      <dd><Info valeur={legal.vendeur} label="nom et prénom, ou nom de la société" /></dd>
+      <dt>Statut</dt>
+      <dd><Info valeur={legal.statut} label="micro-entreprise, SAS…" /></dd>
+      <dt>Adresse</dt>
+      <dd><Info valeur={legal.adresse} label="adresse du siège" /></dd>
+      <dt>SIRET</dt>
+      <dd><Info valeur={legal.siret} label="numéro SIRET" /></dd>
+      <dt>E-mail</dt>
+      <dd><Info valeur={legal.email} label="e-mail de contact" lien="mail" /></dd>
+      <dt>Téléphone</dt>
+      <dd><Info valeur={legal.telephone} label="numéro de téléphone" lien="tel" /></dd>
+    </dl>
+    <p>Les autres informations légales sont dans les <a href="/mentions-legales">mentions légales</a>.</p>
+  </section>
+
+  <section id="produits">
+    <h2>Les produits</h2>
+    <p>
+      Chaque fiche produit présente les caractéristiques essentielles de l'article (matière, coupe, tailles disponibles).
+      Les photos sont aussi fidèles que possible&nbsp;; de légères différences de couleur peuvent venir de l'écran.
+    </p>
+    <p>
+      Les articles sont produits en séries limitées et vendus dans la limite des stocks disponibles. Une pièce épuisée
+      n'est pas forcément réassortie.
+    </p>
+  </section>
+
+  <section id="prix">
+    <h2>Prix</h2>
+    <p>
+      Les prix sont indiqués en euros, toutes taxes comprises. TVA&nbsp;:
+      <Info valeur={legal.tva} label="numéro de TVA, ou « TVA non applicable, art. 293 B du CGI »" />.
+    </p>
+    <p>
+      Les frais de livraison s'ajoutent au prix des articles et sont indiqués avant le paiement&nbsp;: {formatPrix(livraison.prix)},
+      offerts dès {formatPrix(livraison.offerteDes)} d'achat. Le prix facturé est celui affiché au moment de la commande.
+    </p>
+  </section>
+
+  <section id="commande">
+    <h2>Commande</h2>
+    <p>Pour commander, le client&nbsp;:</p>
+    <ul>
+      <li>choisit ses articles et leur taille, puis les ajoute au panier&nbsp;;</li>
+      <li>vérifie le récapitulatif du panier (articles, quantités, frais de livraison, total)&nbsp;;</li>
+      <li>est redirigé vers la page de paiement sécurisée de Stripe, où il indique son adresse de livraison et paie.</li>
+    </ul>
+    <p>
+      La vente est conclue dès que le paiement est accepté. Un e-mail de confirmation récapitulant la commande est alors
+      envoyé au client. Le vendeur peut refuser une commande anormale ou passée de mauvaise foi, par exemple en cas de
+      litige de paiement en cours avec le même client.
+    </p>
+  </section>
+
+  <section id="paiement">
+    <h2>Paiement</h2>
+    <p>
+      Le paiement se fait par carte bancaire sur la page sécurisée de Stripe, prestataire de paiement certifié. Les numéros
+      de carte sont saisis chez Stripe et ne sont jamais transmis ni conservés par {site.nom}.
+    </p>
+    <p>Le montant est débité au moment de la validation de la commande.</p>
+  </section>
+
+  <section id="livraison">
+    <h2>Livraison</h2>
+    <ul>
+      <li><strong>Pays livrés&nbsp;:</strong> {pays}.</li>
+      <li><strong>Délai&nbsp;:</strong> {delai} après la confirmation de la commande.</li>
+      <li>
+        <strong>Frais&nbsp;:</strong> {formatPrix(livraison.prix)}, offerts dès {formatPrix(livraison.offerteDes)} d'achat.
+      </li>
+      <li><strong>Transporteur&nbsp;:</strong> <Info valeur={legal.transporteur} label="transporteur" />.</li>
+    </ul>
+    <p>
+      Pour la Suisse, hors Union européenne, des droits de douane et taxes d'importation peuvent être demandés à la
+      livraison&nbsp;; ils restent à la charge du client.
+    </p>
+    <p>
+      En cas de retard, le client peut demander par e-mail une livraison dans un délai supplémentaire raisonnable. Si la
+      commande n'est toujours pas livrée à la fin de ce délai, il peut annuler la commande et être remboursé intégralement
+      sous 14 jours (articles L216-6 et L216-7 du code de la consommation).
+    </p>
+    <p>
+      Les articles voyagent aux risques du vendeur jusqu'à leur remise au client. À la réception, le client vérifie le colis
+      et signale tout dommage au transporteur et au vendeur dans les meilleurs délais.
+    </p>
+  </section>
+
+  <section id="retractation">
+    <h2>Rétractation et retours</h2>
+    <p>
+      La loi donne au client 14 jours à compter de la réception pour se rétracter, sans avoir à se justifier (article
+      L221-18 du code de la consommation). {site.nom} étend ce délai à <strong>{retours.jours} jours</strong>.
+    </p>
+    <h3>Comment faire</h3>
+    <ul>
+      <li>
+        Prévenir le vendeur avant la fin du délai, par e-mail à <Info valeur={legal.email} label="e-mail de contact" lien="mail" />,
+        avec une déclaration claire ou le <a href="#formulaire">formulaire de rétractation</a> ci-dessous.
+      </li>
+      <li>Renvoyer les articles au plus tard 14 jours après avoir prévenu, à l'adresse communiquée en réponse.</li>
+      <li>Frais de retour&nbsp;: <Info valeur={legal.fraisRetour} label="à la charge du client, ou offerts" />.</li>
+    </ul>
+    <p>
+      Les articles doivent revenir dans leur état d'origine&nbsp;: non portés (hors essayage), non lavés, avec leurs
+      étiquettes. Le client peut être tenu responsable d'une dépréciation due à une autre utilisation que l'essayage
+      (article L221-23).
+    </p>
+    <h3>Remboursement</h3>
+    <p>
+      Le vendeur rembourse toutes les sommes payées, frais de livraison standard compris, au plus tard 14 jours après avoir
+      été informé de la rétractation, avec le même moyen de paiement. Il peut attendre de recevoir les articles, ou une
+      preuve de leur expédition (article L221-24).
+    </p>
+    <p class="legal__note">
+      Pour changer de taille, le plus simple est de renvoyer l'article et de repasser commande dans la bonne taille.
+    </p>
+  </section>
+
+  <section id="garanties">
+    <h2>Garanties légales</h2>
+    <p>
+      Tous les articles bénéficient de la garantie légale de conformité et de la garantie des vices cachés, quel que soit
+      le prix payé. Pour les faire jouer, il suffit d'écrire à <Info valeur={legal.email} label="e-mail de contact" lien="mail" />.
+    </p>
+    <div class="legal__encadre">
+      <p>
+        Le consommateur dispose d'un délai de deux ans à compter de la délivrance du bien pour obtenir la mise en œuvre de
+        la garantie légale de conformité en cas d'apparition d'un défaut de conformité. Durant ce délai, le consommateur
+        n'est tenu d'établir que l'existence du défaut de conformité et non la date d'apparition de celui-ci.
+      </p>
+      <p>
+        La garantie légale de conformité donne au consommateur droit à la réparation ou au remplacement du bien dans un
+        délai de trente jours suivant sa demande, sans frais et sans inconvénient majeur pour lui.
+      </p>
+      <p>
+        Si le bien est réparé dans le cadre de la garantie légale de conformité, le consommateur bénéficie d'une extension
+        de six mois de la garantie initiale. Si le consommateur demande la réparation du bien, mais que le vendeur impose le
+        remplacement, la garantie légale de conformité est renouvelée pour une période de deux ans à compter de la date de
+        remplacement du bien.
+      </p>
+      <p>
+        Le consommateur peut obtenir une réduction du prix d'achat en conservant le bien ou mettre fin au contrat en se
+        faisant rembourser intégralement contre restitution du bien, si&nbsp;:
+      </p>
+      <ul>
+        <li>le professionnel refuse de réparer ou de remplacer le bien&nbsp;;</li>
+        <li>la réparation ou le remplacement du bien intervient après un délai de trente jours&nbsp;;</li>
+        <li>
+          la réparation ou le remplacement du bien occasionne un inconvénient majeur pour le consommateur, notamment
+          lorsque le consommateur supporte définitivement les frais de reprise ou d'enlèvement du bien non conforme, ou
+          s'il supporte les frais d'installation du bien réparé ou de remplacement&nbsp;;
+        </li>
+        <li>la non-conformité du bien persiste en dépit de la tentative de mise en conformité du vendeur restée infructueuse.</li>
+      </ul>
+      <p>
+        Le consommateur a également droit à une réduction du prix du bien ou à la résolution du contrat lorsque le défaut
+        de conformité est si grave qu'il justifie que la réduction du prix ou la résolution du contrat soit immédiate. Le
+        consommateur n'est alors pas tenu de demander la réparation ou le remplacement du bien au préalable. Le
+        consommateur n'a pas droit à la résolution de la vente si le défaut de conformité est mineur.
+      </p>
+      <p>
+        Toute période d'immobilisation du bien en vue de sa réparation ou de son remplacement suspend la garantie qui
+        restait à courir jusqu'à la délivrance du bien remis en état.
+      </p>
+      <p>
+        Les droits mentionnés ci-dessus résultent de l'application des articles L. 217-1 à L. 217-32 du code de la
+        consommation. Le vendeur qui fait obstacle de mauvaise foi à la mise en œuvre de la garantie légale de conformité
+        encourt une amende civile d'un montant maximal de 300 000 euros, qui peut être porté jusqu'à 10 % du chiffre
+        d'affaires moyen annuel (article L. 241-5 du code de la consommation).
+      </p>
+      <p>
+        Le consommateur bénéficie également de la garantie légale des vices cachés en application des articles 1641 à 1649
+        du code civil, pendant une durée de deux ans à compter de la découverte du défaut. Cette garantie donne droit à une
+        réduction de prix si le bien est conservé ou à un remboursement intégral contre restitution du bien.
+      </p>
+    </div>
+  </section>
+
+  <section id="donnees">
+    <h2>Données personnelles</h2>
+    <p>
+      Les données transmises lors d'une commande (nom, adresse de livraison, e-mail) servent à la traiter et à la livrer.
+      Elles ne sont jamais revendues. Le détail des traitements et des droits du client (accès, rectification,
+      suppression…) est dans les <a href="/mentions-legales#donnees">mentions légales</a>.
+    </p>
+  </section>
+
+  <section id="litiges">
+    <h2>Réclamations et litiges</h2>
+    <p>
+      Pour toute question ou réclamation, le client écrit d'abord au vendeur à
+      <Info valeur={legal.email} label="e-mail de contact" lien="mail" />&nbsp;: on cherche toujours une solution à l'amiable.
+    </p>
+    <p>
+      Si la réclamation écrite n'aboutit pas, le client peut saisir gratuitement le médiateur de la consommation&nbsp;:
+      <Info valeur={legal.mediateur.nom} label="nom du médiateur" />
+      (<Info valeur={legal.mediateur.site} label="site du médiateur" lien="web" />), dans un délai d'un an après sa
+      réclamation (articles L612-1 et suivants du code de la consommation).
+    </p>
+    <p>
+      Les présentes CGV sont soumises au droit français. À défaut d'accord amiable, le litige est porté devant le tribunal
+      compétent.
+    </p>
+  </section>
+
+  <section id="formulaire">
+    <h2>Formulaire de rétractation</h2>
+    <p>À compléter et renvoyer uniquement pour se rétracter de la commande (une simple déclaration par e-mail suffit aussi).</p>
+    <div class="legal__encadre legal__formulaire">
+      <p>
+        À l'attention de <Info valeur={legal.vendeur} label="nom du vendeur" />,
+        <Info valeur={legal.adresse} label="adresse" />,
+        <Info valeur={legal.email} label="e-mail" /> :
+      </p>
+      <p>
+        Je/nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la vente du
+        bien (*) ci-dessous&nbsp;:
+      </p>
+      <ul>
+        <li>Commandé le (*) / reçu le (*)&nbsp;:</li>
+        <li>Nom du (des) consommateur(s)&nbsp;:</li>
+        <li>Adresse du (des) consommateur(s)&nbsp;:</li>
+        <li>Signature du (des) consommateur(s) (uniquement en cas de notification sur papier)&nbsp;:</li>
+        <li>Date&nbsp;:</li>
+      </ul>
+      <p class="legal__note">(*) Rayez la mention inutile.</p>
+    </div>
+  </section>
+</PageLegale>

@@ -1,13 +1,26 @@
-// Réglages généraux : textes des bandes défilantes, drop en cours, prochain drop, livraison, réseaux.
+// Réglages généraux : textes des bandes défilantes, drop en cours, prochain drop, livraison, retours, réseaux.
+// Les infos légales (SIRET, adresse, hébergeur…) sont dans src/data/legal.ts.
 // Tout ce qui est ici se modifie sans toucher au reste du code.
 
-/** Livraison (en euros) : bandeau du haut, panier et paiement */
+/** Livraison (en euros) : bandeau du haut, panier, paiement et CGV */
 const livraison = {
   /** Offerte à partir de ce montant d'achat */
   offerteDes: 80,
   /** Prix en dessous */
   prix: 5.9,
+  /** Pays livrés (codes ISO utilisés par Stripe) */
+  pays: [
+    { code: 'FR', nom: 'France' },
+    { code: 'BE', nom: 'Belgique' },
+    { code: 'CH', nom: 'Suisse' },
+    { code: 'LU', nom: 'Luxembourg' },
+  ] as const,
+  /** Délai annoncé au paiement, en jours ouvrés */
+  delai: { min: 2, max: 5 },
 };
+
+/** Retours acceptés pendant ce nombre de jours après la réception (la loi en impose 14) */
+const retours = { jours: 30 };
 
 export const site = {
   nom: 'Tom Boutique',
@@ -31,9 +44,10 @@ export const site = {
   },
 
   livraison,
+  retours,
 
   /** Bandeau fixe tout en haut (sur mobile, seule la première info s'affiche) */
-  annonce: [`Livraison offerte dès ${livraison.offerteDes} €`, 'Drop 001 dispo', 'Retours 30 jours'],
+  annonce: [`Livraison offerte dès ${livraison.offerteDes} €`, 'Drop 001 dispo', `Retours ${retours.jours} jours`],
 
   /** Textes des deux bandes qui traversent la page */
   bandes: {

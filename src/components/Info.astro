@@ -1,0 +1,37 @@
+---
+// Une info légale (src/data/legal.ts) : sa valeur si elle est renseignée,
+// sinon un repère rouge « [À compléter : …] » qu'on ne peut pas rater.
+interface Props {
+  valeur: string | null | undefined;
+  /** Ce qu'il faut renseigner, ex. « numéro SIRET » */
+  label: string;
+  /** Rend la valeur cliquable : e-mail, téléphone ou site web */
+  lien?: 'mail' | 'tel' | 'web';
+}
+
+const { valeur, label, lien } = Astro.props;
+
+const href = !valeur
+  ? undefined
+  : lien === 'mail'
+    ? `mailto:${valeur}`
+    : lien === 'tel'
+      ? `tel:${valeur.replace(/[^\d+]/g, '')}`
+      : lien === 'web'
+        ? valeur
+        : undefined;
+---
+
+{valeur ? href ? <a href={href}>{valeur}</a> : valeur : <span class="a-completer">[À compléter&nbsp;: {label}]</span>}
+
+<style>
+  .a-completer {
+    padding: 0 0.3em;
+    font-weight: 700;
+    color: var(--accent);
+    outline: 1px dashed var(--accent);
+    outline-offset: 1px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+</style>
