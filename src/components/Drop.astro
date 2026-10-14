@@ -5,6 +5,8 @@ import type { CollectionEntry } from 'astro:content';
 import ProductCard from './ProductCard.astro';
 import { RAYONS } from '../data/catalogue';
 import { site } from '../data/site';
+import textes from '../content/textes.json';
+import { typo } from '../lib/typo';
 
 interface Props {
   produits: CollectionEntry<'produits'>[];
@@ -27,7 +29,7 @@ const filtres = RAYONS.map((rayon) => ({
       Drop {site.drop.numero} <span class="drop__nom gothic">{site.drop.nom}</span>
     </h2>
     <p class="shead__aside">
-      {grille.length} pièces en série limitée. Coton épais, prints fluo. Pas de restock&nbsp;: quand c'est parti, c'est parti.
+      {typo(textes.drop.texte.replaceAll('{pieces}', String(grille.length)))}
     </p>
   </header>
 

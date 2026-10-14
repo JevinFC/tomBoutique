@@ -21,9 +21,20 @@ Puis ouvrir http://localhost:4321.
 | `npm run dev`     | Serveur de développement sur `localhost:4321` |
 | `npm run build`   | Génère le site final (pages + fonctions du paiement), comme le fait Netlify |
 
+## L'interface d'administration (Pages CMS)
+
+Les vêtements, les textes, les photos et les infos légales se modifient sans toucher au code, depuis **[app.pagescms.org](https://app.pagescms.org)** : chaque enregistrement crée un commit sur GitHub, et Netlify remet le site en ligne. Le guide pour Tom est dans **[GUIDE.md](GUIDE.md)** ; la configuration des formulaires dans `.pages.yml`.
+
+Mise en place (une seule fois) :
+
+1. Sur [app.pagescms.org](https://app.pagescms.org), se connecter avec le compte GitHub propriétaire du dépôt et installer l'application Pages CMS sur `tomBoutique`.
+2. Dans le projet, onglet **Collaborators**, inviter l'adresse e-mail de Tom : il pourra modifier le contenu sans compte GitHub (mais pas la configuration ni les accès).
+
+Ce qui reste dans le code, volontairement : le design, la mise en page, les animations, le grand titre de l'accueil, les pays de livraison et le texte des pages légales.
+
 ## Modifier les vêtements
 
-Chaque vêtement est un fichier dans `src/content/produits/`. Pour en ajouter un, copie un fichier existant et change les infos :
+Chaque vêtement est un fichier dans `src/content/produits/` (le plus simple : passer par l'interface d'administration). Pour en ajouter un à la main, copie un fichier existant et change les infos :
 
 ```md
 ---
@@ -35,20 +46,21 @@ tailles: [S, M, L, XL] # facultatif (S, M, L, XL par défaut)
 alaune: true # affiché dans la grille du drop (6 pièces maximum)
 epuise: false # true = bandeau « sold out »
 ordre: 1 # le n°1 s'affiche aussi sur le polaroid du hero
-# photo: ./hoodie-fantome.jpg # vraie photo, posée à côté du fichier
+# photo: /src/assets/photos/hoodie-fantome.jpg # vraie photo, rangée dans src/assets/photos/
 ---
 La description (affichée sur la fiche produit).
 ```
 
-Sans `photo`, une silhouette du vêtement s'affiche à la place, sur le fond commun façon photo au flash. Si une info est mal écrite (une catégorie qui n'existe pas, un prix manquant…), le terminal de `npm run dev` le signale.
+Sans `photo` (ou si le fichier est introuvable), une silhouette du vêtement s'affiche à la place, sur le fond commun façon photo au flash. Si une info est mal écrite (une catégorie qui n'existe pas, un prix manquant…), le terminal de `npm run dev` le signale.
 
 ## Modifier les textes
 
-`src/data/site.ts` : slogan, bandeau d'infos du haut, textes des deux bandes qui défilent, date du prochain drop (compte à rebours), livraison (seuil de gratuité et prix), liens des réseaux.
+- `src/content/reglages.json` : phrase d'accroche, messages du bandeau du haut, bandes qui défilent, drop en cours, prochain drop (date en heure de Paris, au format `2026-10-31T20:00`), livraison (seuil de gratuité, prix, délai), durée des retours, liens des réseaux. `src/data/site.ts` les met en forme (date avec le bon fuseau, messages automatiques de livraison et de retours).
+- `src/content/textes.json` : textes des sections Drop, Manifeste, Lookbook (légendes, photos, silhouettes) et Newsletter.
 
 ## Les infos légales
 
-`src/data/legal.ts` : nom du vendeur, statut, adresse, SIRET, TVA, e-mail, hébergeur, médiateur de la consommation, transporteur, frais de retour. Tant qu'un champ vaut `null`, les CGV et les mentions légales affichent à sa place un repère rouge « [À compléter : …] ». La livraison (prix, pays, délai) et la durée des retours viennent de `src/data/site.ts`, les mêmes valeurs que le panier et le paiement.
+`src/content/legal.json` : nom du vendeur, statut, adresse, SIRET, TVA, e-mail, hébergeur, médiateur de la consommation, transporteur, frais de retour. Tant qu'un champ est vide, les CGV et les mentions légales affichent à sa place un repère rouge « [À compléter : …] ». La livraison (prix, pays, délai) et la durée des retours viennent des réglages, les mêmes valeurs que le panier et le paiement.
 
 Ces textes sont un modèle basé sur le code de la consommation : à faire relire avant d'ouvrir la boutique pour de vrai.
 

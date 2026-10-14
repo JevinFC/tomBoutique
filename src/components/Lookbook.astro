@@ -1,27 +1,34 @@
 ---
 // Lookbook : sur grand écran la section se fige et les photos défilent à l'horizontale
 // pendant le scroll ; sur mobile c'est un carrousel qu'on fait glisser au doigt.
+// Les looks (légende, photo, silhouette en attendant la photo) viennent de src/content/textes.json,
+// modifiables depuis l'interface d'administration (voir GUIDE.md).
+import { Image } from 'astro:assets';
 import Garment from './Garment.astro';
 import Icon from './Icon.astro';
-import type { Categorie } from '../data/catalogue';
+import { CATEGORIES, type Categorie } from '../data/catalogue';
+import textes from '../content/textes.json';
+import { trouverPhoto } from '../lib/photos';
+import { typo } from '../lib/typo';
 
-// Placeholders à remplacer par les photos du shooting
-const LOOKS: { legende: string; type: Categorie; rotation: number }[] = [
-  { legende: 'Hoodie Fantôme, 5 h du mat', type: 'hoodie', rotation: -3 },
-  { legende: 'Tee 140 BPM, devant les enceintes', type: 'tshirt', rotation: 2 },
-  { legende: 'Casquette Acide, sous la pluie', type: 'casquette', rotation: -1.5 },
-  { legende: 'Longsleeve Limbo, fin de set', type: 'longsleeve', rotation: 3 },
-  { legende: 'Cargo Nuit blanche, au vestiaire', type: 'pantalon', rotation: -2.5 },
-  { legende: 'Tote Sous-sol, retour en night bus', type: 'sac', rotation: 1.5 },
-];
+const { saison, intro } = textes.lookbook;
+
+// Chaque polaroid penche un peu, en alternant, comme s'ils étaient scotchés à la main
+const PENCHES = [-3, 2, -1.5, 3, -2.5, 1.5];
+const LOOKS = textes.lookbook.looks.map((look, i) => ({
+  legende: look.legende,
+  photo: trouverPhoto(look.photo),
+  silhouette: (CATEGORIES.includes(look.silhouette as Categorie) ? look.silhouette : 'tshirt') as Categorie,
+  rotation: PENCHES[i % PENCHES.length],
+}));
 ---
 
 <section class="lb" id="lookbook" data-lookbook aria-labelledby="lb-title">
   <div class="lb__sticky">
     <header class="lb__head">
       <span class="shead__idx">(03)</span>
-      <h2 class="lb__title" id="lb-title">Lookbook <span class="lb__season">Hiver 26</span></h2>
-      <p class="lb__hint">Shooting à venir. En attendant&nbsp;: des placeholders qui ont du style.</p>
+      <h2 class="lb__title" id="lb-title">Lookbook {saison && <span class="lb__season">{saison}</span>}</h2>
+      {intro && <p class="lb__hint">{typo(intro)}</p>}
     </header>
 
     <div class="lb__viewport">
@@ -31,9 +38,15 @@ const LOOKS: { legende: string; type: Categorie; rotation: number }[] = [
             <figure class="look" style={`--rot: ${look.rotation}deg`}>
               <span class="look__tape" aria-hidden="true" />
               <div class="look__img">
-                <Garment type={look.type} class="look__garment" />
+                {look.photo ? (
+                  <Image class="look__photo" src={look.photo} alt={look.legende} widths={[400, 800]} sizes="380px" />
+                ) : (
+                  <Fragment>
+                    <Garment type={look.silhouette} class="look__garment" />
+                    <span class="look__ph">photo à venir</span>
+                  </Fragment>
+                )}
                 <span class="look__num">{String(i + 1).padStart(2, '0')}</span>
-                <span class="look__ph">photo à venir</span>
               </div>
               <figcaption>
                 <strong>Look {String(i + 1).padStart(2, '0')}</strong> {look.legende}
@@ -199,6 +212,14 @@ const LOOKS: { legende: string; type: Categorie; rotation: number }[] = [
     inset: 0;
     pointer-events: none;
     background: var(--photo-trame);
+  }
+
+  .look__img :global(.look__photo) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .look__img :global(.look__garment) {

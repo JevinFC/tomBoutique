@@ -1,0 +1,24 @@
+{
+  "vendeur": "",
+  "statut": "",
+  "adresse": "",
+  "siret": "",
+  "immatriculation": "",
+  "tva": "",
+  "email": "",
+  "telephone": "",
+  "directeurPublication": "",
+  "hebergeur": {
+    "nom": "",
+    "adresse": "",
+    "telephone": ""
+  },
+  "mediateur": {
+    "nom": "",
+    "site": ""
+  },
+  "transporteur": "",
+  "fraisRetour": "",
+  "newsletter": "",
+  "miseAJour": "10 octobre 2026"
+}

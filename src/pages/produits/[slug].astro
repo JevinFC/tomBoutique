@@ -12,6 +12,7 @@ import Icon from '../../components/Icon.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { formatPrix } from '../../data/catalogue';
 import { site } from '../../data/site';
+import { trouverPhoto } from '../../lib/photos';
 
 export async function getStaticPaths() {
   const produits = (await getCollection('produits')).sort((a, b) => a.data.ordre - b.data.ordre);
@@ -28,7 +29,8 @@ interface Props {
 }
 
 const { produit, autres } = Astro.props;
-const { nom, prix, categorie, badge, tailles, photo, epuise } = produit.data;
+const { nom, prix, categorie, badge, tailles, epuise } = produit.data;
+const photo = trouverPhoto(produit.data.photo);
 const description = produit.body?.trim() ?? '';
 const tailleUnique = tailles.length === 1;
 ---

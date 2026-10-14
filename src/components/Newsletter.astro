@@ -1,13 +1,16 @@
 ---
 // Inscription à la liste (prototype : rien n'est envoyé pour l'instant).
+// Le texte vient de src/content/textes.json (interface d'administration, voir GUIDE.md).
 import Patch from './Patch.astro';
+import textes from '../content/textes.json';
+import { typo } from '../lib/typo';
 ---
 
 <section class="nl" id="liste" aria-labelledby="nl-title">
   <div class="nl__box" data-reveal>
     <p class="kicker">(04) La liste</p>
     <h2 class="nl__title" id="nl-title">Rejoins <span class="nl__accent">la liste</span></h2>
-    <p class="nl__text">Les drops 24 h avant tout le monde, les invits aux soirées, et zéro spam.</p>
+    <p class="nl__text">{typo(textes.newsletter.texte)}</p>
     <form class="nl__form" data-newsletter novalidate>
       <label class="sr-only" for="nl-email">Ton adresse e-mail</label>
       <input id="nl-email" name="email" type="email" placeholder="ton@email.fr" autocomplete="email" required />

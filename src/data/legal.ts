@@ -1,9 +1,11 @@
 // Infos légales de la boutique, affichées dans les CGV (/cgv) et les mentions légales (/mentions-legales).
-// Un champ laissé à null s'affiche en rouge « [À compléter : …] » sur le site : il suffit de remplacer
-// null par le texte entre guillemets, ex. siret: '123 456 789 00012'.
+// Les valeurs sont dans src/content/legal.json, modifiables depuis l'interface d'administration
+// (Pages CMS, voir GUIDE.md). Un champ vide s'affiche en rouge « [À compléter : …] » sur le site.
 // Les prix, la livraison et la durée des retours viennent de src/data/site.ts.
+import donnees from '../content/legal.json';
 
-type Info = string | null;
+/** Une info : chaîne vide tant qu'elle n'est pas renseignée */
+type Info = string;
 
 interface Legal {
   /** Nom et prénom de l'entrepreneur, ou nom de la société */
@@ -22,7 +24,7 @@ interface Legal {
   telephone: Info;
   /** La personne responsable du contenu du site (souvent l'entrepreneur lui-même) */
   directeurPublication: Info;
-  /** L'hébergeur du site une fois en ligne (Netlify, Render, OVH…) */
+  /** L'hébergeur du site (Netlify) */
   hebergeur: { nom: Info; adresse: Info; telephone: Info };
   /** Médiateur de la consommation : obligatoire pour vendre à des particuliers */
   mediateur: { nom: Info; site: Info };
@@ -36,20 +38,4 @@ interface Legal {
   miseAJour: string;
 }
 
-export const legal: Legal = {
-  vendeur: null,
-  statut: null,
-  adresse: null,
-  siret: null,
-  immatriculation: null,
-  tva: null,
-  email: null,
-  telephone: null,
-  directeurPublication: null,
-  hebergeur: { nom: null, adresse: null, telephone: null },
-  mediateur: { nom: null, site: null },
-  transporteur: null,
-  fraisRetour: null,
-  newsletter: null,
-  miseAJour: '10 octobre 2026',
-};
+export const legal: Legal = donnees;

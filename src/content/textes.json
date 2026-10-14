@@ -1,0 +1,29 @@
+{
+  "drop": {
+    "texte": "{pieces} pièces en série limitée. Coton épais, prints fluo. Pas de restock : quand c'est parti, c'est parti."
+  },
+  "manifeste": {
+    "titre": "Pour les gens de",
+    "titreRouge": "la nuit",
+    "sousTitre": "Techno, rap, afters : si tu te reconnais là-dedans, t'es au bon endroit.",
+    "texte": "Tu t'habilles en noir, mais t'as rien de sombre. Des fringues sombres pour des gens lumineux.",
+    "motEnRouge": "lumineux",
+    "signature": "Tom, qui a lancé la boutique",
+    "signatureSuite": "(et qui a les cheveux de toutes les couleurs)"
+  },
+  "lookbook": {
+    "saison": "Hiver 26",
+    "intro": "Shooting à venir. En attendant : des placeholders qui ont du style.",
+    "looks": [
+      { "legende": "Hoodie Fantôme, 5 h du mat", "silhouette": "hoodie", "photo": "" },
+      { "legende": "Tee 140 BPM, devant les enceintes", "silhouette": "tshirt", "photo": "" },
+      { "legende": "Casquette Acide, sous la pluie", "silhouette": "casquette", "photo": "" },
+      { "legende": "Longsleeve Limbo, fin de set", "silhouette": "longsleeve", "photo": "" },
+      { "legende": "Cargo Nuit blanche, au vestiaire", "silhouette": "pantalon", "photo": "" },
+      { "legende": "Tote Sous-sol, retour en night bus", "silhouette": "sac", "photo": "" }
+    ]
+  },
+  "newsletter": {
+    "texte": "Les drops 24 h avant tout le monde, les invits aux soirées, et zéro spam."
+  }
+}

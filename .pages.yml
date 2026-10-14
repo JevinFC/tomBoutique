@@ -1,0 +1,391 @@
+# Interface d'administration de Tom Boutique : Pages CMS (https://app.pagescms.org).
+# Chaque enregistrement crée un commit sur GitHub, puis Netlify remet le site en ligne en 1 à 2 minutes.
+# Guide pour Tom : GUIDE.md. Les photos envoyées sont rangées dans src/assets/photos/
+# et retrouvées par src/lib/photos.ts (le chemin enregistré commence par /src/assets/photos/).
+
+media:
+  input: src/assets/photos
+  output: /src/assets/photos
+  extensions: [jpg, jpeg, png, webp]
+  rename: safe
+
+content:
+  # --- Les vêtements : un fichier par pièce dans src/content/produits/ ---
+  - name: produits
+    label: Vêtements
+    type: collection
+    path: src/content/produits
+    format: yaml-frontmatter
+    filename:
+      template: "{primary}.md"
+      field: create
+    view:
+      fields: [nom, prix, categorie, epuise, alaune, ordre]
+      primary: nom
+      sort: [ordre, nom, prix]
+      default:
+        sort: ordre
+        order: asc
+    fields:
+      - name: nom
+        label: Nom
+        description: Le nom de la pièce, ex. « Hoodie Fantôme ». Il donne aussi son adresse sur le site (à la création seulement).
+        type: string
+        required: true
+      - name: prix
+        label: Prix (en euros)
+        description: Prix TTC, ex. 75 ou 34.90 (avec un point).
+        type: number
+        required: true
+        options:
+          min: 1
+      - name: categorie
+        label: Catégorie
+        description: Sert aux filtres de la boutique, et à la silhouette affichée tant qu'il n'y a pas de photo.
+        type: select
+        required: true
+        options:
+          values:
+            - { name: hoodie, label: Hoodie }
+            - { name: tshirt, label: T-shirt }
+            - { name: longsleeve, label: Manches longues }
+            - { name: pantalon, label: Pantalon }
+            - { name: casquette, label: Casquette }
+            - { name: bonnet, label: Bonnet }
+            - { name: sac, label: Sac }
+      - name: tailles
+        label: Tailles disponibles
+        description: « Unique » pour une casquette, un bonnet, un sac… Rien de coché = S, M, L, XL.
+        type: select
+        options:
+          multiple: true
+          values: [XS, S, M, L, XL, XXL, Unique]
+      - name: photo
+        label: Photo
+        description: Format vertical conseillé (4/5), fond sombre et flash direct, comme le reste du site. Sans photo, une silhouette s'affiche.
+        type: image
+      - name: badge
+        label: Badge
+        description: Petit mot collé sur la photo, ex. « Nouveau » ou « Best-seller ». Vide = pas de badge.
+        type: string
+      - name: epuise
+        label: Épuisé
+        description: Coché, la pièce reste visible avec un bandeau « sold out », mais ne peut plus être achetée.
+        type: boolean
+      - name: alaune
+        label: Dans la grille de l'accueil
+        description: Coché, la pièce apparaît dans la grille du drop sur l'accueil (6 pièces au maximum).
+        type: boolean
+        default: true
+      - name: ordre
+        label: Ordre d'affichage
+        description: Le plus petit d'abord. La pièce n°1 s'affiche aussi sur le polaroid en haut de l'accueil.
+        type: number
+        options:
+          min: 1
+      - name: body
+        label: Description
+        description: Affichée sur la page de la pièce. Matière, coupe, et pourquoi elle est faite pour la nuit.
+        type: text
+
+  # --- Réglages généraux (src/content/reglages.json) ---
+  - name: reglages
+    label: Réglages de la boutique
+    type: file
+    path: src/content/reglages.json
+    format: json
+    fields:
+      - name: slogan
+        label: Slogan
+        description: Le grand titre de l'accueil est dessiné lettre par lettre dans le code. Pour le changer, demande-le (il faut refaire la mise en page).
+        type: string
+        readonly: true
+      - name: description
+        label: Phrase d'accroche
+        description: Sous le grand titre de l'accueil, et dans les résultats Google et les partages.
+        type: text
+        required: true
+      - name: annonce
+        label: Bandeau du haut
+        description: Les messages du bandeau rouge. « Livraison offerte dès … » et « Retours … jours » s'ajoutent tout seuls.
+        type: string
+        list: true
+      - name: drop
+        label: Drop en cours
+        type: object
+        fields:
+          - name: numero
+            label: Numéro
+            description: Ex. 001
+            type: string
+            required: true
+          - name: nom
+            label: Nom
+            description: Écrit en gothique, ex. « Sous-sol ».
+            type: string
+            required: true
+      - name: prochainDrop
+        label: Prochain drop (compte à rebours)
+        type: object
+        fields:
+          - name: numero
+            label: Numéro
+            type: string
+            required: true
+          - name: nom
+            label: Nom
+            type: string
+            required: true
+          - name: date
+            label: Date et heure de sortie
+            description: En heure de Paris.
+            type: date
+            required: true
+            options:
+              time: true
+              format: yyyy-MM-dd'T'HH:mm
+          - name: pieces
+            label: Nombre de pièces
+            type: number
+            required: true
+            options:
+              min: 1
+      - name: bandes
+        label: Bandes qui défilent
+        type: object
+        fields:
+          - name: hero
+            label: Bande du haut de l'accueil
+            type: string
+            list: true
+          - name: prochainDrop
+            label: Bande du prochain drop
+            description: Le numéro, la date et le nom du prochain drop s'affichent tout seuls au début.
+            type: string
+            list: true
+      - name: livraison
+        label: Livraison
+        type: object
+        fields:
+          - name: offerteDes
+            label: Offerte à partir de (euros)
+            type: number
+            required: true
+            options:
+              min: 0
+          - name: prix
+            label: Prix en dessous (euros)
+            description: Ex. 5.9 pour 5,90 € (avec un point).
+            type: number
+            required: true
+            options:
+              min: 0
+          - name: delaiMin
+            label: Délai minimum (jours ouvrés)
+            type: number
+            required: true
+            options:
+              min: 1
+          - name: delaiMax
+            label: Délai maximum (jours ouvrés)
+            type: number
+            required: true
+            options:
+              min: 1
+      - name: retours
+        label: Retours acceptés pendant (jours)
+        description: 14 jours minimum, c'est la loi.
+        type: number
+        required: true
+        options:
+          min: 14
+      - name: reseaux
+        label: Réseaux sociaux
+        description: Liens du pied de page.
+        type: object
+        list: true
+        fields:
+          - name: nom
+            label: Nom
+            type: string
+            required: true
+          - name: url
+            label: Lien
+            description: L'adresse complète, ex. https://www.instagram.com/…
+            type: string
+            required: true
+
+  # --- Textes des sections de l'accueil (src/content/textes.json) ---
+  - name: textes
+    label: Textes de l'accueil
+    type: file
+    path: src/content/textes.json
+    format: json
+    fields:
+      - name: drop
+        label: Section Drop
+        type: object
+        fields:
+          - name: texte
+            label: Texte à côté du titre
+            description: "{pieces} est remplacé par le nombre de pièces de la grille."
+            type: text
+            required: true
+      - name: manifeste
+        label: Section Manifeste
+        type: object
+        fields:
+          - name: titre
+            label: Titre (en blanc)
+            type: string
+            required: true
+          - name: titreRouge
+            label: Fin du titre (en rouge)
+            type: string
+          - name: sousTitre
+            label: Petit texte à côté du titre
+            type: text
+          - name: texte
+            label: Manifeste
+            description: Le grand texte qui s'allume mot à mot pendant le scroll. Court, c'est mieux.
+            type: text
+            required: true
+          - name: motEnRouge
+            label: Mot surligné en rouge
+            description: Un mot du manifeste, écrit pareil, ex. « lumineux ».
+            type: string
+          - name: signature
+            label: Signature
+            description: Le tiret « — » s'ajoute tout seul.
+            type: string
+          - name: signatureSuite
+            label: Suite de la signature
+            description: Le mot « cheveux » prend tout seul les couleurs des cheveux de Tom.
+            type: string
+      - name: lookbook
+        label: Section Lookbook
+        type: object
+        fields:
+          - name: saison
+            label: Saison
+            description: Ex. « Hiver 26 », à côté du titre.
+            type: string
+          - name: intro
+            label: Petit texte sous le titre
+            type: text
+          - name: looks
+            label: Looks
+            description: Dans l'ordre d'affichage. Ajoute, enlève ou réordonne les looks librement.
+            type: object
+            list: true
+            fields:
+              - name: photo
+                label: Photo
+                description: Format vertical (3/4). Elle s'affiche en noir et blanc et prend ses couleurs au survol.
+                type: image
+              - name: legende
+                label: Légende
+                description: Ex. « Hoodie Fantôme, 5 h du mat ».
+                type: string
+                required: true
+              - name: silhouette
+                label: Silhouette (tant qu'il n'y a pas de photo)
+                type: select
+                options:
+                  values:
+                    - { name: hoodie, label: Hoodie }
+                    - { name: tshirt, label: T-shirt }
+                    - { name: longsleeve, label: Manches longues }
+                    - { name: pantalon, label: Pantalon }
+                    - { name: casquette, label: Casquette }
+                    - { name: bonnet, label: Bonnet }
+                    - { name: sac, label: Sac }
+      - name: newsletter
+        label: Section Newsletter
+        type: object
+        fields:
+          - name: texte
+            label: Texte
+            type: text
+            required: true
+
+  # --- Infos légales (src/content/legal.json), affichées dans les CGV et les mentions légales ---
+  - name: legal
+    label: Infos légales
+    type: file
+    path: src/content/legal.json
+    format: json
+    fields:
+      - name: vendeur
+        label: Vendeur
+        description: Nom et prénom, ou nom de la société. Tant qu'un champ est vide, les pages légales affichent « À compléter » en rouge.
+        type: string
+      - name: statut
+        label: Statut
+        description: Micro-entreprise, EI, SAS… (avec le capital social pour une société).
+        type: string
+      - name: adresse
+        label: Adresse
+        type: string
+      - name: siret
+        label: SIRET
+        type: string
+      - name: immatriculation
+        label: Immatriculation
+        description: RCS de la ville, ou Registre national des entreprises (RNE).
+        type: string
+      - name: tva
+        label: TVA
+        description: Numéro de TVA, ou « TVA non applicable, art. 293 B du CGI » en micro-entreprise.
+        type: string
+      - name: email
+        label: E-mail de contact
+        type: string
+      - name: telephone
+        label: Téléphone
+        type: string
+      - name: directeurPublication
+        label: Directeur de la publication
+        description: La personne responsable du contenu du site (souvent toi).
+        type: string
+      - name: hebergeur
+        label: Hébergeur du site
+        type: object
+        fields:
+          - name: nom
+            label: Nom
+            type: string
+          - name: adresse
+            label: Adresse
+            type: string
+          - name: telephone
+            label: Téléphone
+            type: string
+      - name: mediateur
+        label: Médiateur de la consommation
+        description: Obligatoire pour vendre à des particuliers.
+        type: object
+        fields:
+          - name: nom
+            label: Nom
+            type: string
+          - name: site
+            label: Site web
+            type: string
+      - name: transporteur
+        label: Transporteur
+        description: La Poste, Colissimo, Mondial Relay…
+        type: string
+      - name: fraisRetour
+        label: Frais de retour
+        description: « à la charge du client » ou « offerts par Tom Boutique ».
+        type: string
+      - name: newsletter
+        label: Service de newsletter
+        description: Brevo, Mailchimp… une fois branché.
+        type: string
+      - name: miseAJour
+        label: Date de mise à jour des pages légales
+        description: Ex. « 10 octobre 2026 ». À changer quand tu modifies ces infos.
+        type: string
+        required: true

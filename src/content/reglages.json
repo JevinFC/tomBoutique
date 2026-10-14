@@ -1,0 +1,31 @@
+{
+  "slogan": "Noir dehors. Fluo dedans.",
+  "description": "Des fringues noires pour les nuits techno et les concerts de rap. Pour celles et ceux qui s'habillent sombre, mais n'ont rien de sombre.",
+  "annonce": ["Drop 001 dispo"],
+  "drop": {
+    "numero": "001",
+    "nom": "Sous-sol"
+  },
+  "prochainDrop": {
+    "numero": "002",
+    "nom": "Cimetière disco",
+    "date": "2026-10-31T20:00",
+    "pieces": 7
+  },
+  "bandes": {
+    "hero": ["Nouveau drop", "Hiver 26", "Stock limité", "Pas de restock"],
+    "prochainDrop": ["Mets ton réveil"]
+  },
+  "livraison": {
+    "offerteDes": 80,
+    "prix": 5.9,
+    "delaiMin": 2,
+    "delaiMax": 5
+  },
+  "retours": 30,
+  "reseaux": [
+    { "nom": "Instagram", "url": "#" },
+    { "nom": "TikTok", "url": "#" },
+    { "nom": "SoundCloud", "url": "#" }
+  ]
+}

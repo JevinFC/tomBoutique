@@ -1,28 +1,36 @@
 ---
 // Le manifeste, adressé au visiteur : le texte s'allume mot à mot pendant le scroll,
-// et « lumineux. » reçoit un patch rouge. Tom n'apparaît que dans la signature.
+// et un mot reçoit un patch rouge. Tom n'apparaît que dans la signature.
+// Les textes viennent de src/content/textes.json (interface d'administration, voir GUIDE.md).
 import Logo from './Logo.astro';
 import Patch from './Patch.astro';
+import textes from '../content/textes.json';
+import { typo } from '../lib/typo';
 
-const TEXTE = "Tu t'habilles en noir, mais t'as rien de sombre. Des fringues sombres pour des gens lumineux.";
+const { titre, titreRouge, sousTitre, texte, motEnRouge, signature, signatureSuite } = textes.manifeste;
 
-const SURLIGNES: Record<string, string> = {
-  'lumineux.': 'var(--accent)',
-};
+// Le mot en rouge est comparé sans ponctuation ni majuscules : « lumineux » trouve « lumineux. »
+const nu = (mot: string) => mot.toLocaleLowerCase('fr').replace(/[^\p{L}\p{N}'’-]/gu, '');
+const cible = nu(motEnRouge ?? '');
+
+// « cheveux » garde les mèches de Tom dans la signature : le seul arc-en-ciel de la section
+const [avantCheveux, ...apresCheveux] = (signatureSuite ?? '').split('cheveux');
 
 // La ponctuation haute (: ; ! ?) reste collée au mot précédent par une espace insécable
-const mots = TEXTE.split(' ').map((mot, i) => ({
+const mots = texte.split(/\s+/).filter(Boolean).map((mot, i) => ({
   mot,
   avant: i === 0 ? '' : /^[:;!?]$/.test(mot) ? ' ' : ' ',
-  couleur: SURLIGNES[mot],
+  couleur: cible && nu(mot) === cible ? 'var(--accent)' : undefined,
 }));
 ---
 
 <section class="tom" id="manifeste" aria-labelledby="manifeste-title">
   <header class="shead">
     <span class="shead__idx">(02)</span>
-    <h2 class="shead__title" id="manifeste-title">Pour les gens de <span class="tom__accent">la nuit</span></h2>
-    <p class="shead__aside">Techno, rap, afters&nbsp;: si tu te reconnais là-dedans, t'es au bon endroit.</p>
+    <h2 class="shead__title" id="manifeste-title">
+      {titre} {titreRouge && <span class="tom__accent">{titreRouge}</span>}
+    </h2>
+    {sousTitre && <p class="shead__aside">{typo(sousTitre)}</p>}
   </header>
 
   <p class="tom__text" data-manifesto>
@@ -35,9 +43,18 @@ const mots = TEXTE.split(' ').map((mot, i) => ({
 
   <div class="tom__sign" data-reveal>
     <Logo class="tom__logo" />
-    {/* « cheveux » garde les mèches de Tom : le seul arc-en-ciel de la section */}
     <p>
-      — Tom, qui a lancé la boutique<br />(et qui a les <span class="tom__cheveux">cheveux</span> de toutes les couleurs)
+      {signature && `— ${signature}`}
+      {signature && signatureSuite && <br />}
+      {
+        apresCheveux.length ? (
+          <Fragment>
+            {avantCheveux}<span class="tom__cheveux">cheveux</span>{apresCheveux.join('cheveux')}
+          </Fragment>
+        ) : (
+          signatureSuite
+        )
+      }
     </p>
   </div>
 
